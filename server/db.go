@@ -2,13 +2,16 @@ package main
 
 import (
 	"log"
-
-	"github.com/jmoiron/sqlx"
 )
 
 // functions in this file handle interactions with the database
 
-func fetchQuestions(db *sqlx.DB) ([]*Question, error) {
+type Question struct {
+	ID   int    `db:"question_id"`
+	Name string `db:"name"`
+}
+
+func fetchQuestions() ([]*Question, error) {
 	questions := []*Question{}
 	err := db.Select(&questions, "select * from questions")
 	if err != nil {
