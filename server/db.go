@@ -1,9 +1,5 @@
 package main
 
-import (
-	"log"
-)
-
 // functions in this file handle interactions with the database
 
 type Question struct {
@@ -15,7 +11,6 @@ func fetchQuestions() ([]*Question, error) {
 	questions := []*Question{}
 	err := db.Select(&questions, "select * from questions")
 	if err != nil {
-		log.Println("Unable to fetch questions")
 		return nil, err
 	}
 
