@@ -13,9 +13,9 @@ type Question struct {
 }
 
 // assumes questions table exists
-func fetchQuestions() ([]*Question, error) {
+func fetchQuestions(user_id string) ([]*Question, error) {
 	questions := []*Question{}
-	err := db.Select(&questions, "SELECT * FROM questions")
+	err := db.Select(&questions, "SELECT question_id, name FROM questions WHERE user_id=$1", user_id)
 	if err != nil {
 		return nil, err
 	}

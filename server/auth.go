@@ -2,6 +2,7 @@ package main
 
 // authentication stuff
 // TODO: some kind of cron job to remove expired sessions from the database
+// TODO: reorganize this file (maybe it can be a package)
 
 import (
 	"context"
@@ -35,7 +36,7 @@ func (handler *AuthHandler) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 type LoginHandler struct{}
 
 func (handler *LoginHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	if loggedIn(req) {
+	if len(userIDFromSession(req)) > 0 {
 		http.Redirect(resp, req, "/loggedin", http.StatusTemporaryRedirect)
 	} else {
 		stateString, err := randomString()
@@ -49,27 +50,27 @@ func (handler *LoginHandler) ServeHTTP(resp http.ResponseWriter, req *http.Reque
 }
 
 // TODO: consider error handling other than returning false
-func loggedIn(req *http.Request) bool {
+func userIDFromSession(req *http.Request) string {
 	log.Println("checking if logged in...")
 	sessionCookie, err := req.Cookie("session")
 	if err != nil {
 		log.Println("failed to get session cookie from request")
-		return false
+		return ""
 	}
 	session, err := fetchSession(sessionCookie.Value)
 	if err != nil {
 		log.Println("no session matching cookie")
-		return false
+		return ""
 	}
 	if session.ID != sessionCookie.Value {
 		log.Println("session ID from db didn't match cookie (this should be impossible)")
-		return false
+		return ""
 	}
 	if time.Now().After(session.Expires) {
 		log.Println("session expired")
-		return false
+		return ""
 	}
-	return true
+	return session.User_ID
 }
 
 type CallbackHandler struct{}

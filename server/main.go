@@ -99,14 +99,20 @@ func (handler *StaticHandler) ServeHTTP(resp http.ResponseWriter, req *http.Requ
 type QuestionsHandler struct{}
 
 func (handler *QuestionsHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	questions, err := fetchQuestions()
-	if err != nil {
-		log.Fatalf("Unable to fetch questions from db: %v\n", err)
-		http.Error(resp, "unable to fetch questions from database", 500) // TODO: more precise error
-	}
-	if err = json.NewEncoder(resp).Encode(questions); err != nil {
-		log.Fatalf("Unable to encode questions as JSON: %v\n", err)
-		// TODO: this shouldn't fail, but if it does, what does the client see?
+	user_id := userIDFromSession(req)
+	if len(user_id) > 0 {
+		// TODO: fetch questions authored by this user
+		questions, err := fetchQuestions(user_id)
+		if err != nil {
+			log.Fatalf("Unable to fetch questions from db: %v\n", err)
+			http.Error(resp, "unable to fetch questions from database", 500) // TODO: more precise error
+		}
+		if err = json.NewEncoder(resp).Encode(questions); err != nil {
+			log.Fatalf("Unable to encode questions as JSON: %v\n", err)
+			// TODO: this shouldn't fail, but if it does, what does the client see?
+		}
+	} else {
+		// TODO: not authorized
 	}
 }
 
@@ -127,6 +133,7 @@ func addCookie(resp http.ResponseWriter, name string, value string, duration tim
 		Name:    name,
 		Value:   value,
 		Expires: expires,
+		Path:    "/",
 	}
 	http.SetCookie(resp, &cookie)
 }
