@@ -1,4 +1,5 @@
 <script>
+	import NewQuestion from './QuestionsList/NewQuestion.svelte'
 	import QuestionsList from './QuestionsList/QuestionsList.svelte'
 	
 	let authed = "pending"
@@ -17,7 +18,9 @@
 
 <main>
 	<h1>Which?</h1>
+	<p>You wouldn't use simple plurality voting to elect your government, so why would you use it to choose a jam flavor? <br/> <a href="https://en.wikipedia.org/wiki/Plurality_voting">Wait...</a></p>
 	{#if authed === "true"}
+		<NewQuestion/>
 		<QuestionsList/>
 		<a class="button" href="auth/logout">Log Out</a>
 	{:else if authed === "false"}
@@ -62,7 +65,14 @@
 		font-size: 4em;
 		font-weight: 100;
 		margin: 0;
-		padding: 1em;
+		padding-top: 1em;
+		padding-bottom: 0.5em;
+	}
+
+	p {
+		max-width: 30em;
+		margin: 1em auto;
+		padding: 0 0.5em;
 	}
 
 	@media (max-width: 640px) {
