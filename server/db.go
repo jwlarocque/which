@@ -8,8 +8,13 @@ import (
 // functions in this file directly handle interactions with the database
 
 type Question struct {
-	ID   int    `db:"question_id"`
-	Name string `db:"name"`
+	ID      int    `db:"question_id"`
+	Name    string `db:"name"`
+	User_ID string `db:"user_id"`
+}
+
+func insertQuestion(q Question) error {
+	return nil
 }
 
 // assumes questions table exists

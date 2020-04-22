@@ -3,6 +3,7 @@ package main
 // authentication stuff
 // TODO: some kind of cron job to remove expired sessions from the database
 // TODO: reorganize this file (maybe it can be a package)
+// TODO: review auth security
 
 import (
 	"context"
@@ -16,9 +17,13 @@ import (
 	"time"
 )
 
+// -- Auth root handler --
+
 type AuthHandler struct {
 	LoginHandler    *LoginHandler
 	CallbackHandler *CallbackHandler
+	StatusHandler   *StatusHandler
+	LogoutHandler   *LogoutHandler
 }
 
 func (handler *AuthHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -28,16 +33,22 @@ func (handler *AuthHandler) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 		handler.LoginHandler.ServeHTTP(resp, req) // TODO: req URL correct?
 	} else if head == "callback" {
 		handler.CallbackHandler.ServeHTTP(resp, req)
+	} else if head == "status" {
+		handler.StatusHandler.ServeHTTP(resp, req)
+	} else if head == "logout" {
+		handler.LogoutHandler.ServeHTTP(resp, req)
 	} else {
 		http.Error(resp, "auth endpoint does not exist", 404)
 	}
 }
 
+// -- Login handler (redirect to OAuth) --
+
 type LoginHandler struct{}
 
 func (handler *LoginHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	if len(userIDFromSession(req)) > 0 {
-		http.Redirect(resp, req, "/loggedin", http.StatusTemporaryRedirect)
+		http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
 	} else {
 		stateString, err := randomString()
 		if err != nil {
@@ -59,7 +70,7 @@ func userIDFromSession(req *http.Request) string {
 	}
 	session, err := fetchSession(sessionCookie.Value)
 	if err != nil {
-		log.Println("no session matching cookie")
+		log.Printf("no session matching cookie: %s\n", sessionCookie.Value)
 		return ""
 	}
 	if session.ID != sessionCookie.Value {
@@ -72,6 +83,8 @@ func userIDFromSession(req *http.Request) string {
 	}
 	return session.User_ID
 }
+
+// -- Callback (from OAuth) handler --
 
 type CallbackHandler struct{}
 
@@ -92,9 +105,37 @@ func (handler *CallbackHandler) ServeHTTP(resp http.ResponseWriter, req *http.Re
 		} else {
 			sessionID := createSession(data)
 			addCookie(resp, "session", sessionID, cookieDuration)
-			fmt.Fprintf(resp, "UserInfo: %s\n", data)
+			http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
 		}
 	}
+}
+
+// getUserData exchanges an OAuth code for user data from Google
+func getUserData(authCode string) ([]byte, error) {
+	token, err := googleAuthConfig.Exchange(context.Background(), authCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange code for token: %s", err.Error())
+	}
+	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get userinfo from Google Oauth: %s", err.Error())
+	}
+	defer response.Body.Close()
+	data, err := ioutil.ReadAll(response.Body) // TODO: improve this?  why using ioutil.ReadAll?
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %s", err.Error())
+	}
+	return data, nil
+}
+
+// -- Status handler (provides auth status without taking any other action) --
+// Use exclusively for frontend rendering decisions.
+
+type StatusHandler struct{}
+
+func (handler *StatusHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	log.Printf("status: %v\n", len(userIDFromSession(req)) > 0)
+	fmt.Fprintf(resp, "{\"authed\": \"%v\"}\n", len(userIDFromSession(req)) > 0)
 }
 
 type userInfo struct {
@@ -123,22 +164,12 @@ func createSession(data []byte) string {
 	return sessionID
 }
 
-func getUserData(authCode string) ([]byte, error) {
-	// TODO: context.Background() ???
-	token, err := googleAuthConfig.Exchange(context.Background(), authCode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to exchange code for token: %s", err.Error())
-	}
-	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get userinfo from Google Oauth: %s", err.Error())
-	}
-	defer response.Body.Close()
-	data, err := ioutil.ReadAll(response.Body) // TODO: improve this?  why using ioutil.ReadAll?
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %s", err.Error())
-	}
-	return data, nil
+type LogoutHandler struct{}
+
+func (handler *LogoutHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	// TODO: this is dumb, change addCookie to using an expiration time
+	addCookie(resp, "session", "", -24*time.Hour)
+	http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
 }
 
 // randomString returns a b64 string with 32 bytes of randomosity
