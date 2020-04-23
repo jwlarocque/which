@@ -5,7 +5,7 @@
     let questions = getQuestions();
 
 	async function getQuestions() {
-		const res = await fetch("qs");
+		const res = await fetch("qs/list");
 		const data = await res.json();
 
 		if (res.ok) {

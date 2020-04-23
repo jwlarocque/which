@@ -29,7 +29,6 @@ type AuthHandler struct {
 func (handler *AuthHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	head, _ := shiftPath(req.URL.Path)
 	if head == "login" {
-		log.Printf("AuthHandler: %v\n", handler)
 		handler.LoginHandler.ServeHTTP(resp, req) // TODO: req URL correct?
 	} else if head == "callback" {
 		handler.CallbackHandler.ServeHTTP(resp, req)
@@ -150,7 +149,10 @@ func createSession(data []byte) string {
 	if err != nil {
 		log.Fatalf("Failed to unmarshal user data: %v\n", err)
 	}
-	insertUser(info)
+	err = insertUser(info)
+	if err != nil {
+		log.Fatalf("Unable to insert user info into database: %v\n", err)
+	}
 
 	sessionID, err := randomString()
 	if err != nil {

@@ -16,20 +16,6 @@
 	}
 </script>
 
-<main>
-	<h1>Which?</h1>
-	<p>You wouldn't use simple plurality voting to elect your government, so why would you use it to choose a jam flavor? <br/> <a href="https://en.wikipedia.org/wiki/Plurality_voting">Wait...</a></p>
-	{#if authed === "true"}
-		<NewQuestion/>
-		<QuestionsList/>
-		<a class="button" href="auth/logout">Log Out</a>
-	{:else if authed === "false"}
-		<a class="button" href="auth/login">Log In with Google</a>
-	{:else}
-		<p>Loading...</p>
-	{/if}
-</main>
-
 <style>
 	:global(body) {
 		margin: 0;
@@ -42,6 +28,14 @@
 	:global(.clickable) {
 		cursor: pointer;
 		user-select: none;
+	}
+
+	:global(.visible) {
+		visibility: visible;
+	}
+	
+	:global(.hidden) {
+		visibility: hidden;
 	}
 
 	:global(.button, form button) {
@@ -81,3 +75,18 @@
 		}
 	}
 </style>
+
+<main>
+	<h1>Which?</h1>
+	<p>You wouldn't use simple plurality voting to elect your government, so why would you use it to choose a jam flavor? <br/> <a href="https://en.wikipedia.org/wiki/Plurality_voting">Wait...</a></p>
+	{#if authed === "true"}
+		<NewQuestion/>
+		<QuestionsList/>
+		<a class="button" href="auth/logout">Log Out</a>
+	{:else if authed === "false"}
+		<br/>
+		<a class="button" href="auth/login">Log In with Google</a>
+	{:else}
+		<p>Loading...</p>
+	{/if}
+</main>

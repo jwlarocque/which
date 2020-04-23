@@ -1,4 +1,5 @@
 <script>
+    // TODO: consider just putting this in QuestionsList.svelte
     export let q;
 </script>
 
@@ -10,5 +11,5 @@
 </style>
 
 <div>
-    <p>The question is: {q.Name}</p>
+    <p>The question is: {q.name}</p>
 </div>

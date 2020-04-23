@@ -1,25 +1,57 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 )
 
 // functions in this file directly handle interactions with the database
 
-type Question struct {
-	ID      int    `db:"question_id"`
-	Name    string `db:"name"`
-	User_ID string `db:"user_id"`
+// note: Question struct is in questions.go
+// TODO: consider organizing code into files by data type rather than
+//       function, to avoid this (i.e., eliminate this db.go file)
+// TODO: errors in this function are really bad, because they probably mean
+//       a partial db write.  So, I dunno, fix yo bugs.
+func insertQuestion(q question) (int, error) {
+	log.Println("inserting new question...")
+	question_id := 0
+	rows, err := db.NamedQuery("INSERT INTO questions (name, user_id) VALUES (:name, :user_id) RETURNING question_id", q)
+	if err != nil {
+		return 0, err
+	}
+	if rows.Next() {
+		rows.Scan(&question_id)
+	} else {
+		// TODO: better error handling
+		return -1, fmt.Errorf("no question_id received from db query")
+	}
+	log.Printf("qid: %v\n", question_id)
+	if question_id > 0 {
+		// TODO: check for duplicated option ids (might happen if the client is messing with us)
+		for _, option := range q.Options {
+			if len(option.Text) > 0 { // exclude blank options
+				option.Question_ID = question_id // TODO: maybe just pass this to insertOption
+				err = insertOption(option)
+				if err != nil {
+					return -1, err
+				}
+			}
+		}
+		return question_id, nil
+	} else {
+		// TODO: return better error (no/bad question id returned from INSERT INTO questions)
+		return -1, fmt.Errorf("uh oh")
+	}
 }
 
-func insertQuestion(q Question) error {
-	return nil
+func insertOption(o option) error {
+	_, err := db.Exec("INSERT INTO options VALUES ($1, $2, $3)", o.ID, o.Question_ID, o.Text)
+	return err
 }
 
-// assumes questions table exists
-func fetchQuestions(user_id string) ([]*Question, error) {
-	questions := []*Question{}
+func fetchQuestions(user_id string) ([]*question, error) {
+	questions := []*question{}
 	err := db.Select(&questions, "SELECT question_id, name FROM questions WHERE user_id=$1", user_id)
 	if err != nil {
 		return nil, err
@@ -33,6 +65,7 @@ func insertUser(info userInfo) error {
 	return err
 }
 
+// TODO: why did I add this stub?
 func fetchUser() {
 
 }
