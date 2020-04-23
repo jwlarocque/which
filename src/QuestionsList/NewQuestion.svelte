@@ -1,6 +1,5 @@
 <script>
-    // share questions with parent (QuestionsList.svelte)
-    export let questions;
+    import {qs} from "../stores.js"
 
     const MAX_OPTIONS = 50;
 	const OPTION_PLACEHOLDERS = ["Apricot", "Rhubarb", "Sour Cherry", "Raspberry", "Hot Pepper", "Gooseberry", "Peach", "Quince", "Lingonberry", "Quince", "Cloudberry", "", "Strawberry", "Blackberry", "Blueberry", "Grape", "Orange Marmalade", "Plum", "Apple Butter", "Fig"]; // example options
@@ -49,7 +48,7 @@
             if (res.ok) {
                 clearNewQForm();
                 newQFormVisible = true;
-                return data; // TODO: update questions in QuestionsList.svelte
+                qs.update(value => [...value, data]);
             } else {
                 newQFormVisible = true;
                 throw new Error(data);

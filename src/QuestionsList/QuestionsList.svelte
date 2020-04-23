@@ -1,15 +1,21 @@
 <script>
+	import {qs} from "../stores.js"
 	import QuestionsListItem from "./QuestionsListItem.svelte"
 
 	// TODO: put this in onMount
-    let questions = getQuestions();
+	let questions;
+	const unsubscribe = qs.subscribe(value => {
+		questions = value;
+	});
+
+	getQuestions();
 
 	async function getQuestions() {
 		const res = await fetch("qs/list");
 		const data = await res.json();
 
 		if (res.ok) {
-			return data;
+			qs.set(data);
 		} else {
 			throw new Error(data);
 		}
