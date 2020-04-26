@@ -13,41 +13,55 @@ import (
 //       function, to avoid this (i.e., eliminate this db.go file)
 // TODO: errors in this function are really bad, because they probably mean
 //       a partial db write.  So, I dunno, fix yo bugs.
-func insertQuestion(q question) (int, error) {
+func insertQuestion(q question) (string, error) {
 	log.Println("inserting new question...")
-	question_id := 0
+	question_id := ""
 	rows, err := db.NamedQuery("INSERT INTO questions (name, user_id, type) VALUES (:name, :user_id, :type) RETURNING question_id", q)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	if rows.Next() {
 		rows.Scan(&question_id)
 	} else {
 		// TODO: better error handling
-		return -1, fmt.Errorf("no question_id received from db query")
+		return "", fmt.Errorf("no question_id received from db query")
 	}
 	log.Printf("qid: %v\n", question_id)
-	if question_id > 0 {
+	if len(question_id) > 0 {
 		// TODO: check for duplicated option ids (might happen if the client is messing with us)
 		for _, option := range q.Options {
 			if len(option.Text) > 0 { // exclude blank options
 				option.Question_ID = question_id // TODO: maybe just pass this to insertOption
 				err = insertOption(option)
 				if err != nil {
-					return -1, err
+					return "", err
 				}
 			}
 		}
 		return question_id, nil
 	} else {
 		// TODO: return better error (no/bad question id returned from INSERT INTO questions)
-		return -1, fmt.Errorf("uh oh")
+		return "", fmt.Errorf("uh oh")
 	}
 }
 
 func insertOption(o option) error {
 	_, err := db.Exec("INSERT INTO options VALUES ($1, $2, $3)", o.ID, o.Question_ID, o.Text)
 	return err
+}
+
+func fetchQuestionAndOpts(question_id string) (question, error) {
+	var q question
+	q.ID = question_id
+	err := db.Get(&q, "SELECT user_id, type, name FROM questions WHERE question_id=$1", question_id)
+	if err != nil {
+		return q, err
+	}
+	err = db.Select(&(q.Options), "SELECT option_id, text FROM options WHERE question_id=$1", question_id)
+	if err != nil {
+		return q, err
+	}
+	return q, nil
 }
 
 func fetchQuestions(user_id string) ([]*question, error) {
