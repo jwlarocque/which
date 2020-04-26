@@ -1,5 +1,5 @@
 <script>
-	import NewQuestion from './QuestionsList/NewQuestion.svelte'
+	import NewQuestion from './NewQuestion/NewQuestion.svelte'
 	import QuestionsList from './QuestionsList/QuestionsList.svelte'
 	
 	let authed = "pending"
@@ -25,6 +25,10 @@
 		font-family: "Futura", "Ubuntu", "Helvetica Neue", "sans-serif";
 	}
 
+	:global(p a, p a:visited) {
+		color: #ee4035;
+	}
+
 	:global(.clickable) {
 		cursor: pointer;
 		user-select: none;
@@ -45,6 +49,57 @@
 		text-decoration: none;
 		background-color: #445261;
 		padding: 0.5em;
+	}
+
+	:global(.radioSelect) {
+		display: inline-flex;
+		margin: 0;
+	}
+
+	:global(.radioSelect input) {
+		opacity: 0;
+		position: fixed;
+		width: 0;
+		z-index: -10;
+		padding: 0;
+		margin: 0;
+		border: 0;
+	}
+
+	:global(.radioSelect label) {
+		text-align: center;
+		color: #eef2f3;
+		background-color: #445261;
+		border: 1px solid #445261;
+		border-radius: 0;
+		padding: 0.5em;
+		margin: 0;
+		user-select: none;
+		display: flex;
+		align-items: center;
+	}
+
+	:global(.radioSelect label > p) {
+		margin: auto;
+	}
+
+	:global(.radioSelect label:first-of-type) {
+		border-top-left-radius: 2px;
+		border-bottom-left-radius: 2px;
+	}
+
+	:global(.radioSelect label:last-of-type) {
+		border-top-right-radius: 2px;
+		border-bottom-right-radius: 2px;
+	}
+
+	:global(.radioSelect input:focus + label) {
+		border: 1px solid #eef2f3;
+	}
+
+	:global(.radioSelect input:checked + label) {
+		background-color: #ee4035;
+		border-color: #ee4035;
 	}
 
 	main {
@@ -78,7 +133,6 @@
 
 <main>
 	<h1>Which?</h1>
-	<p>You wouldn't use simple plurality voting to elect your government, so why would you use it to choose a jam flavor? <br/> <a href="https://en.wikipedia.org/wiki/Plurality_voting">Wait...</a></p>
 	{#if authed === "true"}
 		<NewQuestion/>
 		<QuestionsList/>

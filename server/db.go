@@ -16,7 +16,7 @@ import (
 func insertQuestion(q question) (int, error) {
 	log.Println("inserting new question...")
 	question_id := 0
-	rows, err := db.NamedQuery("INSERT INTO questions (name, user_id) VALUES (:name, :user_id) RETURNING question_id", q)
+	rows, err := db.NamedQuery("INSERT INTO questions (name, user_id, type) VALUES (:name, :user_id, :type) RETURNING question_id", q)
 	if err != nil {
 		return 0, err
 	}

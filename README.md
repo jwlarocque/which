@@ -7,6 +7,7 @@ Current code quality: hackathon
 ### References
 
 [Golang package docs](https://golang.org/pkg)  
+[MDN](https://developer.mozilla.org/en-US/docs/Web)
 
 ##### Auth
 [Skarlso, Google sign-in Part 1](https://skarlso.github.io/2016/06/12/google-signin-with-go/)  
