@@ -1,15 +1,21 @@
 <script>
 	import NewQuestion from './NewQuestion/NewQuestion.svelte'
 	import QuestionsList from './QuestionsList/QuestionsList.svelte'
+	import {auth_state} from "./stores.js"
+
+	let authed;
+
+	const unsubscribe = auth_state.subscribe(value => {
+		authed = value;
+	})
 	
-	let authed = "pending"
 	getAuthStatus();
 	async function getAuthStatus() {
 		const res = await fetch("auth/status");
 		const data = await res.json();
 
 		if (res.ok) {
-			authed = data.authed;
+			auth_state.set(data.authed);
 		} else {
 			throw new Error(data);
 		}
@@ -49,6 +55,11 @@
 		text-decoration: none;
 		background-color: #445261;
 		padding: 0.5em;
+		transition: color 0.1s ease-in-out;
+	}
+
+	:global(.button:hover, form button:hover) {
+		color: white !important;
 	}
 
 	:global(.radioSelect) {
@@ -77,6 +88,11 @@
 		user-select: none;
 		display: flex;
 		align-items: center;
+		transition: color 0.1s ease-in-out;
+	}
+
+	:global(.radioSelect label:hover) {
+		color: white;
 	}
 
 	:global(.radioSelect label > p) {
@@ -139,7 +155,7 @@
 		<a class="button" href="auth/logout">Log Out</a>
 	{:else if authed === "false"}
 		<br/>
-		<a class="button" href="auth/login">Log In with Google</a>
+		<a class="button" href={"auth/login/" + window.location.search}>Log In with Google</a>
 	{:else}
 		<p>Loading...</p>
 	{/if}

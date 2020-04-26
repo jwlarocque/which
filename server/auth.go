@@ -2,7 +2,7 @@ package main
 
 // authentication stuff
 // TODO: some kind of cron job to remove expired sessions from the database
-// TODO: reorganize this file (maybe it can be a package)
+// TODO: reorganize this file, it's getting a bit out of hand (maybe it can be a package)
 // TODO: review auth security
 
 import (
@@ -49,12 +49,12 @@ func (handler *LoginHandler) ServeHTTP(resp http.ResponseWriter, req *http.Reque
 	if len(userIDFromSession(req)) > 0 {
 		http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
 	} else {
-		stateString, err := randomString()
+		state, err := encodeState(state{QueryString: req.URL.Query().Encode(), RandomState: randomString()})
 		if err != nil {
 			log.Fatalf("Unable to generate random state string: %v\n", err)
 		}
-		addCookie(resp, "state", stateString, time.Minute) // TODO: abstract out this duration?
-		url := googleAuthConfig.AuthCodeURL(stateString)
+		addCookie(resp, "state", state, time.Minute) // TODO: abstract out this duration?
+		url := googleAuthConfig.AuthCodeURL(state)
 		http.Redirect(resp, req, url, http.StatusTemporaryRedirect)
 	}
 }
@@ -87,6 +87,7 @@ func userIDFromSession(req *http.Request) string {
 
 type CallbackHandler struct{}
 
+// TODO: this function is way out of hand
 func (handler *CallbackHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	stateCookie, err := req.Cookie("state")
 	if err != nil {
@@ -104,7 +105,18 @@ func (handler *CallbackHandler) ServeHTTP(resp http.ResponseWriter, req *http.Re
 		} else {
 			sessionID := createSession(data)
 			addCookie(resp, "session", sessionID, cookieDuration)
-			http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
+			s, err := decodeState(req.FormValue("state"))
+			if err != nil {
+				log.Printf("unable to decode state from callback: %v\n", err)
+				http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
+			} else {
+				if len(s.QueryString) > 0 {
+					http.Redirect(resp, req, "/?"+s.QueryString, http.StatusTemporaryRedirect)
+				} else {
+					http.Redirect(resp, req, "/", http.StatusTemporaryRedirect)
+				}
+			}
+
 		}
 	}
 }
@@ -154,10 +166,7 @@ func createSession(data []byte) string {
 		log.Fatalf("Unable to insert user info into database: %v\n", err)
 	}
 
-	sessionID, err := randomString()
-	if err != nil {
-		log.Fatalf("Unable to generate random session id: %v\n", err)
-	}
+	sessionID := randomString()
 	err = insertSession(sessionID, info.ID)
 	if err != nil {
 		log.Fatalf("Failed to create new session: %v\n", err)
@@ -176,11 +185,35 @@ func (handler *LogoutHandler) ServeHTTP(resp http.ResponseWriter, req *http.Requ
 
 // randomString returns a b64 string with 32 bytes of randomosity
 // TODO: consider removing error return and crashing on failure (shouldn't happen)
-func randomString() (string, error) {
+func randomString() string {
 	bytes := make([]byte, 32)
 	_, err := rand.Read(bytes)
 	if err != nil {
+		log.Fatalf("failed to generate random string: %v\n", err)
+	}
+	return base64.URLEncoding.EncodeToString(bytes)
+}
+
+// TODO: this seems really overcomplicated
+type state struct {
+	QueryString string `json:"query"`
+	RandomState string `json:"state"`
+}
+
+func encodeState(s state) (string, error) {
+	stateString, err := json.Marshal(s)
+	if err != nil {
 		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(bytes), nil
+	return base64.URLEncoding.EncodeToString([]byte(stateString)), nil
+}
+
+func decodeState(stateB64 string) (state, error) {
+	queryState := state{}
+	stateBytes, err := base64.URLEncoding.DecodeString(stateB64)
+	if err != nil {
+		return queryState, err
+	}
+	json.Unmarshal(stateBytes, &queryState)
+	return queryState, nil
 }

@@ -14,7 +14,6 @@ import (
 // TODO: errors in this function are really bad, because they probably mean
 //       a partial db write.  So, I dunno, fix yo bugs.
 func insertQuestion(q question) (string, error) {
-	log.Println("inserting new question...")
 	question_id := ""
 	rows, err := db.NamedQuery("INSERT INTO questions (name, user_id, type) VALUES (:name, :user_id, :type) RETURNING question_id", q)
 	if err != nil {
@@ -26,7 +25,6 @@ func insertQuestion(q question) (string, error) {
 		// TODO: better error handling
 		return "", fmt.Errorf("no question_id received from db query")
 	}
-	log.Printf("qid: %v\n", question_id)
 	if len(question_id) > 0 {
 		// TODO: check for duplicated option ids (might happen if the client is messing with us)
 		for _, option := range q.Options {
