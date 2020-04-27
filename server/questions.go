@@ -137,7 +137,7 @@ func (handler *NewVoteHandler) ServeHTTP(resp http.ResponseWriter, req *http.Req
 			vote.User_ID = user_ID
 			vote.Question_ID = votes.Question_ID
 		}
-		err = updateVotes(user_ID, votes.Question_ID, votes)
+		err = updateVotes(votes)
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(resp, "{\"message\": \"failed to insert new question into database\", \"ok\": \"false\"}", http.StatusInternalServerError)
@@ -153,6 +153,7 @@ func (handler *NewVoteHandler) ServeHTTP(resp http.ResponseWriter, req *http.Req
 
 type approvalVote struct {
 	Option_ID   int    `json:"id" db:"option_id"`
+	State       bool   `json:"state" db:"state"`
 	Question_ID string `json:"-" db:"question_id"`
 	User_ID     string `json:"-" db:"user_id"`
 }

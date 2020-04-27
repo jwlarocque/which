@@ -33,8 +33,7 @@
         let ret = JSON.stringify(
             {"question_id": id, 
              "votes": votes.map( function(vote, index) { 
-                 return {"id": (vote ? index : -1)}})
-                 .filter(vote => vote.id >= 0)})
+                 return {"id": index, "state": vote}})})
         console.log(ret)
         return ret
     }
