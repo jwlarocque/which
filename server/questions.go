@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,17 +14,23 @@ type QuestionsHandler struct {
 	ListHandler        *ListHandler
 	NewQuestionHandler *NewQuestionHandler
 	QuestionHandler    *QuestionHandler
+	NewVoteHandler     *NewVoteHandler
 }
 
 // TODO: consider moving user auth here to reduce repeated code (problem: passing around userID)
 func (handler *QuestionsHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	head, _ := shiftPath(req.URL.Path)
+	head, tail := shiftPath(req.URL.Path)
 	if head == "list" { // TODO: not sure root qs/ should also be the path for the user's list of questions
 		handler.ListHandler.ServeHTTP(resp, req)
 	} else if head == "new" {
 		handler.NewQuestionHandler.ServeHTTP(resp, req)
-	} else {
+	} else if head == "vote" {
+		handler.NewVoteHandler.ServeHTTP(resp, req)
+	} else if head == "q" {
+		req.URL.Path = tail
 		handler.QuestionHandler.ServeHTTP(resp, req)
+	} else {
+		http.Error(resp, "Questions endpoint does not exist.", http.StatusNotFound)
 	}
 }
 
@@ -103,6 +110,56 @@ func (handler *NewQuestionHandler) ServeHTTP(resp http.ResponseWriter, req *http
 		http.Error(resp, "You are not authorized to submit new questions.", http.StatusUnauthorized)
 		return
 	}
+}
+
+type NewVoteHandler struct{}
+
+func (handler *NewVoteHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	user_ID := userIDFromSession(req)
+	if len(user_ID) > 0 {
+		var votes approvalVotes
+		data, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(resp, "failed to read request body", http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%v\n", string(data))
+		err = json.Unmarshal(data, &votes)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(resp, "failed to unmarshal json from request", http.StatusInternalServerError)
+			return
+		}
+
+		// TODO: stutter (votes.Votes)
+		for _, vote := range votes.Votes {
+			vote.User_ID = user_ID
+			vote.Question_ID = votes.Question_ID
+		}
+		err = updateVotes(user_ID, votes.Question_ID, votes)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(resp, "{\"message\": \"failed to insert new question into database\", \"ok\": \"false\"}", http.StatusInternalServerError)
+			return
+		}
+		// TODO: respond
+		fmt.Fprintf(resp, "{\"ok\": \"true\"}\n")
+	} else {
+		http.Error(resp, "You are not authorized to vote.", http.StatusUnauthorized)
+		return
+	}
+}
+
+type approvalVote struct {
+	Option_ID   int    `json:"id" db:"option_id"`
+	Question_ID string `json:"-" db:"question_id"`
+	User_ID     string `json:"-" db:"user_id"`
+}
+
+type approvalVotes struct {
+	Votes       []*approvalVote `json:"votes"`
+	Question_ID string          `json:"question_id"`
 }
 
 type option struct {

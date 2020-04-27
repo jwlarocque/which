@@ -4,6 +4,10 @@ The beginnings of a simple voting/polling web app.  Svelte frontend, Go backend,
 
 Current code quality: hackathon  
 
+### Global notes to self
+
+* add a subtitle/place for question authors to add more information
+
 ### References
 
 [Golang package docs](https://golang.org/pkg)  

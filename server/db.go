@@ -72,6 +72,20 @@ func fetchQuestions(user_id string) ([]*question, error) {
 	return questions, nil
 }
 
+// TODO: this delete then insert strategy for updates is not ideal.  switch to:
+//       store all options for each user, with a boolean for whether they voted for it (then just UPDATE)
+//       (yes, far more storage required, but I'm pretty sure it's worth it.)
+func updateVotes(user_ID string, question_ID string, votes approvalVotes) error {
+	_, err := db.Exec("DELETE FROM approval_votes WHERE question_id=$1 AND user_id=$2", question_ID, user_ID)
+	if err != nil {
+		return err
+	}
+	if len(votes.Votes) > 0 {
+		_, err = db.NamedExec("INSERT INTO approval_votes VALUES(:option_id, :question_id, :user_id) ON CONFLICT DO NOTHING", votes.Votes)
+	}
+	return err
+}
+
 func insertUser(info userInfo) error {
 	_, err := db.Exec("INSERT INTO users VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING", info.ID, info.Email)
 	return err

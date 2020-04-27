@@ -41,11 +41,8 @@
     }
 
     async function handleNewQuestion() {
-        // TODO: send request to server
         newQFormVisible = false;
         if (validateQuestion()) {
-			console.log(JSON.stringify({"name": newQName, "type": newQType.value, "options": newQOptions}));
-			console.log(JSON.stringify({"name": newQName, "type": newQType.value, "options": newQOptions}));
             const res = await fetch("qs/new", {
                 method: "POST",
                 headers: {"Content-Type": "application/json",},
@@ -74,15 +71,12 @@
 </script>
 
 <style>
-	main {
-		text-align: left;
-	}
-
 	h3 {
 		color: #ee4035;
 	}
 
 	form {
+		text-align: left;
 		position: relative;
 		display: flexbox;
 		padding: 1em;
@@ -93,12 +87,6 @@
 
 	form *:not([type="radio"]) {
 		width: 100%;
-	}
-
-	#formBackground {
-		width: 100%;
-        background-color: #242020;
-        position: relative;
 	}
 
 	form input, form select, form option {
@@ -141,38 +129,36 @@
 	}
 </style>
 
-<main>
-    <div id="formBackground">
-		<form id="newQForm" on:submit|preventDefault={handleNewQuestion} class={newQFormVisible ? "visible" : "hidden"}>
-			<div class="formItem">
-				<label class="formLabel"><h3>New Question</h3></label>
-				<input id="newQName" type="text" required placeholder="e.g., Which jam would you prefer?" bind:value={newQName}>
+<main class="darkBackground">
+	<form id="newQForm" on:submit|preventDefault={handleNewQuestion} class={newQFormVisible ? "visible" : "hidden"}>
+		<div class="formItem">
+			<label class="formLabel"><h3>New Question</h3></label>
+			<input id="newQName" type="text" required placeholder="e.g., Which jam would you prefer?" bind:value={newQName}>
+		</div>
+		<label>Options</label>
+		{#each newQOptions as option}
+			<div class="newQOption">
+				<input bind:value={option.text} placeholder={option.placeholder} on:input={handleOptionUpdate}>
 			</div>
-			<label>Options</label>
-			{#each newQOptions as option}
-				<div class="newQOption">
-					<input bind:value={option.text} placeholder={option.placeholder} on:input={handleOptionUpdate}>
+		{/each}
+		<div class="radioSelect">
+			{#each newQTypes as type}
+				<input type="radio" bind:group={newQType} value={type} id={type.value} checked>
+				<label class="clickable" for={type.value}><p>{type.text}</p></label>
+			{/each}
+		</div>
+		<div id="explainerContainer">
+			{#each newQTypes as type}
+				<div id="explainer" class={type.value === newQType.value && newQFormVisible ? "visible" : "hidden"}>
+					{@html type.explainer}
 				</div>
 			{/each}
-			<div class="radioSelect">
-				{#each newQTypes as type}
-					<input type="radio" bind:group={newQType} value={type} id={type.value} checked>
-					<label class="clickable" for={type.value}><p>{type.text}</p></label>
-				{/each}
-			</div>
-			<div id="explainerContainer">
-				{#each newQTypes as type}
-					<div id="explainer" class={type.value === newQType.value && newQFormVisible ? "visible" : "hidden"}>
-						{@html type.explainer}
-					</div>
-				{/each}
-			</div>
-			<div>
-				<button type=submit class="clickable">
-					Create
-				</button>
-			</div>
-		</form>
-        <p id="status" class={newQFormVisible ? "hidden" : "visible"}>Submitting...</p>
-	</div>
+		</div>
+		<div>
+			<button type=submit class="clickable">
+				Create
+			</button>
+		</div>
+	</form>
+	<p id="status" class={newQFormVisible ? "hidden" : "visible"}>Submitting...</p>
 </main>

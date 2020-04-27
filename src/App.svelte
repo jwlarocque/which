@@ -1,9 +1,11 @@
 <script>
 	import NewQuestion from './NewQuestion/NewQuestion.svelte'
 	import QuestionsList from './QuestionsList/QuestionsList.svelte'
+	import Question from './Question/Question.svelte'
 	import {auth_state} from "./stores.js"
 
 	let authed;
+	let question_id = "";
 
 	const unsubscribe = auth_state.subscribe(value => {
 		authed = value;
@@ -16,13 +18,22 @@
 
 		if (res.ok) {
 			auth_state.set(data.authed);
+			if (authed === "true") {
+				checkQuery();
+			}
 		} else {
 			throw new Error(data);
 		}
 	}
+
+	function checkQuery() {
+		let params = (new URL(document.location)).searchParams;
+		question_id = params.get("q") || "";
+	}
 </script>
 
 <style>
+	/* TODO: better global css (use preprocessor?) */
 	:global(body) {
 		margin: 0;
 		padding: 0;
@@ -118,6 +129,13 @@
 		border-color: #ee4035;
 	}
 
+	:global(.darkBackground) {
+		width: 100%;
+        background-color: #242020;
+		color: #eef2f3;
+        position: relative;
+	}
+
 	main {
 		text-align: center;
 		padding: 0;
@@ -150,9 +168,13 @@
 <main>
 	<h1>Which?</h1>
 	{#if authed === "true"}
-		<NewQuestion/>
-		<QuestionsList/>
-		<a class="button" href="auth/logout">Log Out</a>
+		{#if question_id.length > 0}
+			<Question id={question_id}/>
+		{:else}
+			<NewQuestion/>
+			<QuestionsList/>
+			<a class="button" href="auth/logout">Log Out</a>
+		{/if}
 	{:else if authed === "false"}
 		<br/>
 		<a class="button" href={"auth/login/" + window.location.search}>Log In with Google</a>
