@@ -101,13 +101,16 @@ type OptionStore struct {
 }
 
 func (store OptionStore) Insert(o which.Option) error {
-	_, err := store.DB.Exec("INSERT INTO options VALUES ($1, $2, $3)", o.ID, o.QuestionID, o.Text)
-	return err
+	if len(o.Text) > 0 { // exclude blank options TODO: more appropriate place to put this logic?
+		_, err := store.DB.Exec("INSERT INTO options VALUES ($1, $2, $3)", o.ID, o.QuestionID, o.Text)
+		return err
+	}
+	return nil
 }
 
 func (store OptionStore) FetchAll(questionID string) ([]*which.Option, error) {
 	options := []*which.Option{}
-	err := store.DB.Select(options, "SELECT option_id, text FROM options WHERE question_id=$1", questionID)
+	err := store.DB.Select(&options, "SELECT option_id, text FROM options WHERE question_id=$1", questionID)
 	if err != nil {
 		return options, fmt.Errorf("failed to fetch options for question ID: '%s', error: %v\n", questionID, err)
 	}
@@ -121,7 +124,7 @@ type VotesStore struct {
 func (store VotesStore) Update(vs which.Votes) error {
 	var err error
 	if len(vs.Votes) > 0 {
-		_, err = store.DB.NamedExec("INSERT INTO approval_votes VALUES(:option_id, :question_id, :user_id, :state) ON CONFLICT ON CONSTRAINT approval_votes_pkey DO UPDATE SET state=EXCLUDED.state", vs.Votes)
+		_, err = store.DB.NamedExec("INSERT INTO votes VALUES(:option_id, :question_id, :user_id, :state) ON CONFLICT ON CONSTRAINT votes_pkey DO UPDATE SET state=EXCLUDED.state", vs.Votes)
 	}
 	return err
 }

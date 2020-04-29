@@ -25,15 +25,13 @@
     }
 
     function voteStringFromState() {
-        // converts votes = [true, false, true true] 
-        //     and produces [0,           2,   3]
-        // and puts it in a JSON string along with the question_id
+        // TODO: this is not okay, but it does work
         // TODO: I think this might be too many anonymous functions in one line...
         //       it looks like Klingon...
         let ret = JSON.stringify(
             {"question_id": id, 
              "votes": votes.map( function(vote, index) { 
-                 return {"id": index, "state": vote}})})
+                 return {"id": index, "state": (vote === true ? 1 : (vote === false ? 0 : vote))}})})
         console.log(ret)
         return ret
     }
