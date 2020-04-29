@@ -1,22 +1,32 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	_ "github.com/jackc/pgx/stdlib"
+	// TODO: import from github
+	"../which"
 )
 
-type Root struct {
-	StaticHandler *Static
-	//QuestionsHandler *QuestionsHandler
-	//AuthHandler      *AuthHandler
+func ListenAndServe(address string, handler *Root) error {
+	return http.ListenAndServe(address, handler)
 }
 
-func NewRoot() *Root {
+type Root struct {
+	// child handlers
+	StaticHandler *Static
+	AuthHandler   *Auth
+	//QuestionsHandler *QuestionsHandler
+}
+
+func NewRoot(userStore which.UserStore, sessionStore which.SessionStore) *Root {
 	root := &Root{
 		StaticHandler: &Static{},
+		AuthHandler:   NewAuth(userStore, sessionStore),
 	}
 	return root
 }
@@ -28,8 +38,9 @@ func (handler *Root) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		//handler.QuestionsHandler.ServeHTTP(resp, req)
 	} else if head == "auth" {
 		req.URL.Path = tail
-		//handler.AuthHandler.ServeHTTP(resp, req)
+		handler.AuthHandler.ServeHTTP(resp, req)
 	} else {
+		req.URL.Path = head + tail
 		handler.StaticHandler.ServeHTTP(resp, req)
 	}
 }
@@ -38,12 +49,16 @@ func (handler *Root) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 type Static struct{}
 
 func (handler *Static) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	if req.URL.Path == "/" {
-		http.ServeFile(resp, req, "public/index.html")
-	} else {
-		http.ServeFile(resp, req, "public"+req.URL.Path)
-		// TODO: consider explicitly sending 404 if resources doesn't exist
+	log.Println(req.URL.Path)
+	http.ServeFile(resp, req, cleanPublicPath(req.URL.Path))
+}
+
+func cleanPublicPath(p string) string {
+	cleaned := path.Clean("public/" + p)
+	if cleaned != "public" && cleaned[:7] != "public/" {
+		return "public/"
 	}
+	return cleaned
 }
 
 func shiftPath(p string) (head, tail string) {
@@ -53,4 +68,14 @@ func shiftPath(p string) (head, tail string) {
 		return p[1:], "/"
 	}
 	return p[1:i], p[i:]
+}
+
+func addCookie(resp http.ResponseWriter, name string, value string, expires time.Time) {
+	cookie := http.Cookie{
+		Name:    name,
+		Value:   value,
+		Expires: expires,
+		Path:    "/",
+	}
+	http.SetCookie(resp, &cookie)
 }

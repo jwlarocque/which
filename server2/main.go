@@ -1,23 +1,15 @@
 package main
 
-// TODO: cut down on all the log.Fatal
-
 import (
-	"net/http"
-	"time"
+	"log"
+	"os"
 
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/oauth2"
 
-	_ "github.com/jackc/pgx/stdlib"
-	"github.com/jmoiron/sqlx"
-
-	"./handlers" // TODO: switch to import from github
-)
-
-// TODO: read these from a config file
-const (
-	oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
-	cookieDuration    = 24 * time.Hour
+	// TODO: import from github
+	"./handlers"
+	"./psql"
 )
 
 var (
@@ -25,56 +17,17 @@ var (
 	googleAuthConfig *oauth2.Config
 )
 
-func init() {
-
-}
-
 func main() {
-	http.ListenAndServe(":8080", handlers.NewRoot())
-}
+	// connect to database
+	db, err := sqlx.Connect("pgx", os.Getenv("WHICH_DB_STRING"))
+	if err != nil {
+		log.Fatalf("Unable to establish connection to the database: %v\n", err)
+	}
 
-type User struct {
-	ID      string `json:"user_id"`
-	Email   string `json:"email"`
-	Picture string `json:"picture"`
-}
+	userStore := &psql.UserStore{DB: db}
+	sessionStore := &psql.SessionStore{DB: db}
 
-type UserStore interface {
-	Insert(User) error
-}
+	rh := handlers.NewRoot(userStore, sessionStore)
 
-type Session struct {
-	ID      string    `db:"session_id"`
-	UserID  string    `db:"user_id"`
-	Created time.Time `db:"created"`
-	Expires time.Time `db:"expires"`
-}
-
-type SessionStore interface {
-	Insert(Session) error
-	Fetch(sessionID string) (Session, error)
-}
-
-type Question struct {
-	ID      string   `json:"question_id" db:"question_id"`
-	UserID  string   `json:"-" db:"user_id"`
-	Name    string   `json:"name" db:"name"`
-	Type    string   `json:"type" db:"type"`
-	Options []Option `json:"options" db:"-"`
-}
-
-type QuestionStore interface {
-	Insert(Question) (questionID string, err error)
-	Fetch(questionID string) (Question, error)
-	FetchAll(userID string) ([]*Question, error)
-}
-
-type Option struct {
-	ID         int    `json:"option_id" db:"option_id"`
-	Text       string `json:"text" db:"text"`
-	QuestionID string `json:"-" db:"question_id"`
-}
-
-type OptionStore interface {
-	Insert(Option) error
+	handlers.ListenAndServe(":8080", rh)
 }
