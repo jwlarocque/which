@@ -3,6 +3,7 @@
 
     const MAX_OPTIONS = 50;
 	const OPTION_PLACEHOLDERS = ["Apricot", "Rhubarb", "Sour Cherry", "Raspberry", "Hot Pepper", "Gooseberry", "Peach", "Quince", "Lingonberry", "Quince", "Cloudberry", "Strawberry", "Blackberry", "Blueberry", "Grape", "Orange Marmalade", "Plum", "Apple Butter", "Fig"]; // example options
+	const MAX_FIELD_CHARS = "128";
 
 	// this is my kind of function
 	function randomJam() {
@@ -133,12 +134,12 @@
 	<form id="newQForm" on:submit|preventDefault={handleNewQuestion} class={newQFormVisible ? "visible" : "hidden"}>
 		<div class="formItem">
 			<label class="formLabel"><h3>New Question</h3></label>
-			<input id="newQName" type="text" required placeholder="e.g., Which jam would you prefer?" bind:value={newQName}>
+			<input id="newQName" type="text" required placeholder="e.g., Which jam would you prefer?" bind:value={newQName} maxlength={MAX_FIELD_CHARS}>
 		</div>
 		<label>Options</label>
 		{#each newQOptions as option}
 			<div class="newQOption">
-				<input bind:value={option.text} placeholder={option.placeholder} on:input={handleOptionUpdate}>
+				<input bind:value={option.text} placeholder={option.placeholder} on:input={handleOptionUpdate} maxlength={MAX_FIELD_CHARS}>
 			</div>
 		{/each}
 		<div class="radioSelect">

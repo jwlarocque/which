@@ -4,6 +4,8 @@ package handlers
 // client and server.
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -24,13 +26,14 @@ type Root struct {
 	// child handlers
 	StaticHandler *Static
 	AuthHandler   *Auth
-	//QsHandler *QsHandler
+	QsHandler     *Qs
 }
 
-func NewRoot(userStore which.UserStore, sessionStore which.SessionStore) *Root {
+func NewRoot(userStore which.UserStore, sessionStore which.SessionStore, questionStore which.QuestionStore) *Root {
 	root := &Root{
 		StaticHandler: &Static{},
 		AuthHandler:   NewAuth(userStore, sessionStore),
+		QsHandler:     NewQs(sessionStore, questionStore),
 	}
 	return root
 }
@@ -39,7 +42,7 @@ func (handler *Root) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	head, tail := shiftPath(req.URL.Path)
 	if head == "qs" {
 		req.URL.Path = tail
-		//handler.QuestionsHandler.ServeHTTP(resp, req)
+		handler.QsHandler.ServeHTTP(resp, req)
 	} else if head == "auth" {
 		req.URL.Path = tail
 		handler.AuthHandler.ServeHTTP(resp, req)
@@ -85,4 +88,24 @@ func addCookie(resp http.ResponseWriter, name string, value string, expires time
 		Path:    "/",
 	}
 	http.SetCookie(resp, &cookie)
+}
+
+// returns a Session if the request has a valid session cookie, else error
+// TODO: somewhat awkward - retrieves session from store using id from request data
+func sessionFromRequest(req *http.Request, store which.SessionStore) (which.Session, error) {
+	sessionCookie, err := req.Cookie("session")
+	if err != nil {
+		return which.Session{}, fmt.Errorf("failed to get session cookie from request: %v", err)
+	}
+	session, err := store.Fetch(sessionCookie.Value)
+	if err != nil {
+		return which.Session{}, fmt.Errorf("no session matching cookie: %v", err)
+	}
+	if session.ID != sessionCookie.Value {
+		return which.Session{}, errors.New("session ID from db didn't match cookie (this should be impossible)")
+	}
+	if time.Now().After(session.Expires) {
+		return which.Session{}, errors.New("session expired")
+	}
+	return session, nil
 }

@@ -53,7 +53,7 @@ type QuestionStore interface {
 }
 
 type Option struct {
-	ID         int    `json:"option_id" db:"option_id"`
+	ID         int    `json:"id" db:"option_id"`
 	Text       string `json:"text" db:"text"`
 	QuestionID string `json:"-" db:"question_id"`
 }

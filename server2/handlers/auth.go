@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -71,7 +70,7 @@ func (handler *Auth) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	} else if head == "logout" {
 		handler.LogoutHandler.ServeHTTP(resp, req)
 	} else {
-		http.Error(resp, "auth endpoint does not exist", 404)
+		http.Error(resp, "auth endpoint does not exist", http.StatusNotFound)
 	}
 }
 
@@ -168,16 +167,16 @@ func createUserFromCallback(req *http.Request, config *oauth2.Config) (which.Use
 func getUserData(authCode string, config *oauth2.Config) ([]byte, error) {
 	token, err := config.Exchange(context.Background(), authCode)
 	if err != nil {
-		return nil, fmt.Errorf("failed to exchange code for token: %s", err.Error())
+		return nil, fmt.Errorf("failed to exchange code for token: %v", err)
 	}
 	response, err := http.Get(which.OauthGoogleUrlAPI + token.AccessToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get userinfo from Google Oauth: %s", err.Error())
+		return nil, fmt.Errorf("failed to get userinfo from Google Oauth: %v", err)
 	}
 	defer response.Body.Close()
 	data, err := ioutil.ReadAll(response.Body) // TODO: improve this?  why using ioutil.ReadAll?
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %s", err.Error())
+		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 	return data, nil
 }
@@ -251,24 +250,4 @@ func randomString() string {
 		log.Fatalf("failed to generate random string: %v\n", err)
 	}
 	return base64.URLEncoding.EncodeToString(bytes)
-}
-
-// returns a Session if the request has a valid session cookie, else error
-// TODO: somewhat awkward - retrieves session from store using id from request data
-func sessionFromRequest(req *http.Request, store which.SessionStore) (which.Session, error) {
-	sessionCookie, err := req.Cookie("session")
-	if err != nil {
-		return which.Session{}, fmt.Errorf("failed to get session cookie from request: %v", err)
-	}
-	session, err := store.Fetch(sessionCookie.Value)
-	if err != nil {
-		return which.Session{}, fmt.Errorf("no session matching cookie: %v", err)
-	}
-	if session.ID != sessionCookie.Value {
-		return which.Session{}, errors.New("session ID from db didn't match cookie (this should be impossible)")
-	}
-	if time.Now().After(session.Expires) {
-		return which.Session{}, errors.New("session expired")
-	}
-	return session, nil
 }
