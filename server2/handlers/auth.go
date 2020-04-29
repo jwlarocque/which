@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -264,10 +265,10 @@ func sessionFromRequest(req *http.Request, store which.SessionStore) (which.Sess
 		return which.Session{}, fmt.Errorf("no session matching cookie: %v", err)
 	}
 	if session.ID != sessionCookie.Value {
-		return which.Session{}, fmt.Errorf("session ID from db didn't match cookie (this should be impossible)")
+		return which.Session{}, errors.New("session ID from db didn't match cookie (this should be impossible)")
 	}
 	if time.Now().After(session.Expires) {
-		return which.Session{}, fmt.Errorf("session expired")
+		return which.Session{}, errors.New("session expired")
 	}
 	return session, nil
 }

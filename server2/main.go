@@ -26,6 +26,9 @@ func main() {
 
 	userStore := &psql.UserStore{DB: db}
 	sessionStore := &psql.SessionStore{DB: db}
+	//optionStore := &psql.OptionStore{DB: db}
+	//questionStore := &psql.QuestionStore{DB: db, OptionStore: optionStore}
+	//votesStore := &psql.VotesStore{DB: db}
 
 	rh := handlers.NewRoot(userStore, sessionStore)
 

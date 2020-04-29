@@ -1,7 +1,9 @@
 package handlers
 
+// package handlers imports http, and handles all communication between the
+// client and server.
+
 import (
-	"log"
 	"net/http"
 	"path"
 	"strings"
@@ -22,7 +24,7 @@ type Root struct {
 	// child handlers
 	StaticHandler *Static
 	AuthHandler   *Auth
-	//QuestionsHandler *QuestionsHandler
+	//QsHandler *QsHandler
 }
 
 func NewRoot(userStore which.UserStore, sessionStore which.SessionStore) *Root {
@@ -53,7 +55,6 @@ func (handler *Root) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 type Static struct{}
 
 func (handler *Static) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	log.Println(req.URL.Path)
 	http.ServeFile(resp, req, cleanPublicPath(req.URL.Path))
 }
 
