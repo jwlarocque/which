@@ -30,7 +30,7 @@ func (store SessionStore) Insert(session which.Session) error {
 		session.ID,
 		session.UserID,
 		time.Now(),
-		time.Now().Add(which.CookieDuration)) // TODO: read expiration from config
+		time.Now().Add(which.CookieDuration))
 	return err
 }
 
