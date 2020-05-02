@@ -128,8 +128,8 @@ func (store BallotStore) Update(ballot which.Ballot) (int, error) {
 	// yikes!
 	rows, err := store.DB.NamedQuery(
 		`WITH ins AS (
-			INSERT INTO ballots (ballot_id, question_id, user_id)
-				VALUES(:ballot_id, :question_id, :user_id) 
+			INSERT INTO ballots (question_id, user_id)
+				VALUES(:question_id, :user_id) 
 			ON CONFLICT ON CONSTRAINT ballots_pkey 
 				DO NOTHING 
 			RETURNING ballot_id
