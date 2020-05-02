@@ -83,4 +83,5 @@ type Vote struct {
 
 type VoteStore interface {
 	Update(Vote) error
+	FetchAll(ballotID int) ([]*Vote, error)
 }

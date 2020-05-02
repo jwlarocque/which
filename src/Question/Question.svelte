@@ -5,10 +5,12 @@
 
     let q = {};
     let votes;
+    let ballots;
 
     let newVoteFormVisible = false;
 
     getQuestion(id);
+    getBallots(id);
 
     async function getQuestion(question_id) {
         const res = await fetch("qs/q/" + question_id);
@@ -19,6 +21,18 @@
             votes = Array(data.options.length);
             q = data;
             newVoteFormVisible = true;
+		} else {
+			throw new Error(data);
+		}
+    }
+
+    async function getBallots(question_id) {
+        const res = await fetch("qs/vs/" + question_id);
+		const data = await res.json();
+
+		if (res.ok) {
+            ballots = data;
+            console.log(ballots);
 		} else {
 			throw new Error(data);
 		}

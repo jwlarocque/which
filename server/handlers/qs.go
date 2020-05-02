@@ -17,6 +17,7 @@ type Qs struct {
 	NewQuestionHandler *NewQuestion
 	GetQuestionHandler *GetQuestion
 	NewVoteHandler     *NewVote
+	GetBallotsHandler *GetBallots
 }
 
 func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore) *Qs {
@@ -41,6 +42,10 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, b
 		questionStore: questionStore,
 	}
 
+	qs.GetBallotsHandler = &GetBallots{
+		ballotStore: ballotStore,
+	}
+
 	return qs
 }
 
@@ -59,6 +64,7 @@ func (handler *Qs) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		handler.GetQuestionHandler.ServeHTTP(resp, req)
 	} else if head == "vs" {
 		// handle send votes
+		handler.GetBallotsHandler.ServeHTTP(resp, req)
 	} else {
 		http.Error(resp, "qs endpoint does not exist", http.StatusNotFound)
 	}
@@ -202,15 +208,21 @@ func createBallotFromRequest(req *http.Request) (which.Ballot, error) {
 
 // == GetVotes handler ================================
 
-type GetVotes struct {
-	BallotStore which.BallotStore
-	VoteStore   which.VoteStore
+type GetBallots struct {
+	ballotStore which.BallotStore
 }
 
-func (handler *GetVotes) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	//questionID := req.URL.Path[1:]
-	//vs, err := handler.VotesStore.FetchAll(questionID)
-	//if err != nil {
-	//	http.Error(resp, "failed to retrieve votes", http.StatusInternalServerError)
-	//}
+func (handler *GetBallots) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	_, tail := shiftPath(req.URL.Path)
+	questionID := tail[1:]
+	ballots, err := handler.ballotStore.FetchAll(questionID)
+	if err != nil {
+		log.Printf("failed to fetch ballots: %v\n", err)
+		http.Error(resp, "failed to fetch ballots", http.StatusInternalServerError)
+		return
+	}
+	if err = json.NewEncoder(resp).Encode(ballots); err != nil {
+		log.Printf("failed to encode ballots as JSON: %v\n", err)
+		http.Error(resp, "failed to encode ballots as JSON", http.StatusInternalServerError)
+	}
 }

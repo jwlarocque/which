@@ -170,6 +170,12 @@ func (store BallotStore) FetchAll(questionID string) ([]*which.Ballot, error) {
 	if err != nil {
 		return ballots, fmt.Errorf("failed to fetch votes for question ID: %s, error: %v", questionID, err)
 	}
+	for _, ballot := range(ballots) {
+		ballot.Votes, err = store.VoteStore.FetchAll(ballot.ID)
+		if err != nil {
+			return ballots, fmt.Errorf("incomplete votes fetch: %v", err)
+		}
+	}
 	return ballots, nil
 }
 
@@ -181,4 +187,13 @@ type VoteStore struct {
 func (store VoteStore) Update(vote which.Vote) error {
 	_, err := store.DB.NamedExec("INSERT INTO votes VALUES(:ballot_id, :option_id, :state) ON CONFLICT ON CONSTRAINT votes_pkey DO UPDATE SET state=EXCLUDED.state", vote)
 	return err
+}
+
+func (store VoteStore) FetchAll(ballotID int) ([]*which.Vote, error) {
+	votes := []*which.Vote{}
+	err := store.DB.Select(&votes, "SELECT ballot_id, option_id, state FROM votes WHERE ballot_id=$1", ballotID)
+	if err != nil {
+		return votes, fmt.Errorf("failed to fetch votes for ballot ID: %d, error: %v", ballotID, err)
+	}
+	return votes, nil
 }
