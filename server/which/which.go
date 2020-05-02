@@ -53,7 +53,7 @@ type QuestionStore interface {
 }
 
 type Option struct {
-	ID         int    `json:"id" db:"option_id"`
+	ID         int    `json:"id" db:"option_id"` // TODO: rename to option_id in json
 	Text       string `json:"text" db:"text"`
 	QuestionID string `json:"-" db:"question_id"`
 }
@@ -63,18 +63,24 @@ type OptionStore interface {
 	FetchAll(questionID string) ([]*Option, error)
 }
 
-type Votes struct {
-	QuestionID string  `json:"question_id"`
+type Ballot struct {
+	ID         int  `json:"ballot_id" db:"ballot_id"`
+	QuestionID string  `json:"question_id" db:"question_id"`
+	UserID     string  `json:"-" db:"user_id"`
 	Votes      []*Vote `json:"votes"`
 }
 
-type VotesStore interface {
-	Update(Votes) error
+type BallotStore interface {
+	Update(Ballot) (int, error)
+	FetchAll(questionID string) ([]*Ballot, error)
 }
 
 type Vote struct {
+	BallotID int `json:"-" db:"ballot_id"`
 	OptionID   int    `json:"id" db:"option_id"`
-	QuestionID string `json:"-" db:"question_id"`
-	UserID     string `json:"-" db:"user_id"` // user who submitted this vote
 	State      int    `json:"state" db:"state"`
+}
+
+type VoteStore interface {
+	Update(Vote) error
 }

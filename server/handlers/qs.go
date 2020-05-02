@@ -19,7 +19,7 @@ type Qs struct {
 	NewVoteHandler     *NewVote
 }
 
-func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, votesStore which.VotesStore) *Qs {
+func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore) *Qs {
 	qs := &Qs{}
 
 	qs.ListHandler = &List{
@@ -34,7 +34,7 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, v
 
 	qs.NewVoteHandler = &NewVote{
 		sessionStore: sessionStore,
-		votesStore:   votesStore,
+		ballotStore:   ballotStore,
 	}
 
 	qs.GetQuestionHandler = &GetQuestion{
@@ -57,6 +57,8 @@ func (handler *Qs) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	} else if head == "q" {
 		req.URL.Path = tail
 		handler.GetQuestionHandler.ServeHTTP(resp, req)
+	} else if head == "vs" {
+		// handle send votes
 	} else {
 		http.Error(resp, "qs endpoint does not exist", http.StatusNotFound)
 	}
@@ -158,37 +160,35 @@ func (handler *GetQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 
 type NewVote struct {
 	sessionStore which.SessionStore
-	votesStore   which.VotesStore
+	ballotStore  which.BallotStore
 }
 
+// TODO: alert user that vote failed
 func (handler *NewVote) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	session, err := sessionFromRequest(req, handler.sessionStore)
 	if err != nil {
 		http.Error(resp, "not authorized to vote (oof)", http.StatusUnauthorized)
 		return
 	}
-	vs, err := createVotesFromRequest(req)
+	ballot, err := createBallotFromRequest(req)
+	ballot.UserID = session.UserID
 	if err != nil {
 		log.Printf("failed to create new votes: %v\n", err)
 		http.Error(resp, "failed to create new votes", http.StatusInternalServerError)
 		return
 	}
-	for _, vote := range vs.Votes {
-		vote.UserID = session.UserID
-		vote.QuestionID = vs.QuestionID
-	}
-	err = handler.votesStore.Update(vs)
+	_, err = handler.ballotStore.Update(ballot)
 	if err != nil {
-		log.Printf("failed to insert/update new votes: %v\n", err)
-		http.Error(resp, "failed to insert/update new votes", http.StatusInternalServerError)
+		log.Printf("failed to insert/update ballot: %v\n", err)
+		http.Error(resp, "failed to insert/update ballot", http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprintf(resp, "{\"ok\": \"true\"}\n")
 }
 
 // TODO: code is identical to createQuestionFromRequest, reduce repetition
-func createVotesFromRequest(req *http.Request) (which.Votes, error) {
-	var vs which.Votes
+func createBallotFromRequest(req *http.Request) (which.Ballot, error) {
+	var vs which.Ballot
 	data, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return vs, fmt.Errorf("failed to read request body: %v", err)
@@ -198,4 +198,19 @@ func createVotesFromRequest(req *http.Request) (which.Votes, error) {
 		return vs, fmt.Errorf("failed to unmarshal json: %v", err)
 	}
 	return vs, nil
+}
+
+// == GetVotes handler ================================
+
+type GetVotes struct {
+	BallotStore which.BallotStore
+	VoteStore   which.VoteStore
+}
+
+func (handler *GetVotes) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	//questionID := req.URL.Path[1:]
+	//vs, err := handler.VotesStore.FetchAll(questionID)
+	//if err != nil {
+	//	http.Error(resp, "failed to retrieve votes", http.StatusInternalServerError)
+	//}
 }

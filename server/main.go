@@ -27,10 +27,13 @@ func main() {
 	userStore := &psql.UserStore{DB: db}
 	sessionStore := &psql.SessionStore{DB: db}
 	optionStore := &psql.OptionStore{DB: db}
+	// TODO: reconsider this store nesting?
+	//       - it's not obvious from the interface definition that QuestionStore can insert options
 	questionStore := &psql.QuestionStore{DB: db, OptionStore: optionStore}
-	votesStore := &psql.VotesStore{DB: db}
+	voteStore := &psql.VoteStore{DB: db}
+	ballotStore := &psql.BallotStore{DB:db, VoteStore: voteStore}
 
-	rh := handlers.NewRoot(userStore, sessionStore, questionStore, votesStore)
+	rh := handlers.NewRoot(userStore, sessionStore, questionStore, ballotStore)
 
 	handlers.ListenAndServe(":8080", rh)
 }
