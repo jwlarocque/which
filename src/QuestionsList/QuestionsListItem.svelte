@@ -5,11 +5,15 @@
 
 <style>
     div {
-        padding: 0.2em 0;
+        padding: 0 0;
     }
 
+    .question * {
+        text-decoration: inherit;
+        color: inherit;
+    }
 </style>
 
 <div>
-    <p>The question is: {q.name}</p>
+    <p class="question"><a href={"/?q=" + q.question_id}>{q.name}</a></p>
 </div>

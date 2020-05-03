@@ -1,8 +1,10 @@
 <script>
-	import NewQuestion from './NewQuestion/NewQuestion.svelte'
-	import QuestionsList from './QuestionsList/QuestionsList.svelte'
-	import Question from './Question/Question.svelte'
-	import {auth_state} from "./stores.js"
+	import {onMount} from 'svelte';
+	import {select} from 'd3-selection';
+	import NewQuestion from './NewQuestion/NewQuestion.svelte';
+	import QuestionsList from './QuestionsList/QuestionsList.svelte';
+	import Question from './Question/Question.svelte';
+	import {auth_state} from "./stores.js";
 
 	let authed;
 	let question_id = "";
@@ -143,13 +145,23 @@
 		margin: 0 auto;
 	}
 
+	@media (max-width: 640px) {
+		main {
+			max-width: none;
+		}
+	}
+
 	h1 {
 		color: #ee4035;
 		font-size: 4em;
 		font-weight: 100;
 		margin: 0;
-		padding-top: 1em;
-		padding-bottom: 0.5em;
+		padding: 0.5em;
+	}
+
+	h1 a {
+		text-decoration: inherit;
+		color: inherit;
 	}
 
 	p {
@@ -158,22 +170,59 @@
 		padding: 0 0.5em;
 	}
 
-	@media (max-width: 640px) {
-		main {
-			max-width: none;
-		}
+	nav {
+		width: calc(100% - 2em);
+		max-width: 30em;
+		display: inline-flex;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		row-gap: 1em;
+		margin: 2em 1em;
+		box-sizing: border-box;
 	}
+
+	#navLinks {
+		display: inline-flex;
+	}
+
+	nav * {
+		margin: auto 0;
+	}
+
+	nav a, nav a:visited {
+		color: #242020;
+	}
+
+	nav .button {
+		box-sizing: border-box;
+	}
+
 </style>
 
 <main>
-	<h1>Which?</h1>
+	<nav>
+		<div id="navLinks">
+			<a href="http://jwlarocque.com/">jwlarocque.com</a>
+			<p>/</p>
+			<a href="https://github.com/jwlarocque/which">Source</a>
+		</div>
+		<div>
+			{#if authed === "true"}
+				<a class="button" href="auth/logout">Log Out</a>
+			{:else if authed === "false"}
+				<a class="button" href={"auth/login/" + window.location.search}>Log In</a>
+			{:else}
+				<p>Loading...</p>
+			{/if}
+		</div>
+	</nav>
+	<h1><a href="/">Which?</a></h1>
 	{#if authed === "true"}
 		{#if question_id.length > 0}
 			<Question id={question_id}/>
 		{:else}
 			<NewQuestion/>
 			<QuestionsList/>
-			<a class="button" href="auth/logout">Log Out</a>
 		{/if}
 	{:else if authed === "false"}
 		<br/>

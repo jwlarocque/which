@@ -1,9 +1,11 @@
 <script>
     import ApprovalQuestion from "./ApprovalQuestion.svelte"
+    import ApprovalResults from "./ApprovalResults.svelte"
 
     export let id;
 
     let q = {};
+    let optionCounts = [];
     let votes;
     let ballots;
 
@@ -21,6 +23,7 @@
             votes = Array(data.options.length);
             q = data;
             newVoteFormVisible = true;
+            console.log(q);
 		} else {
 			throw new Error(data);
 		}
@@ -32,10 +35,29 @@
 
 		if (res.ok) {
             ballots = data;
-            console.log(ballots);
+            updateResults(ballots);
 		} else {
 			throw new Error(data);
 		}
+    }
+
+    function updateResults(ballots) {
+        console.log(ballots);
+        optionCounts = ballots.reduce(combineReducer, []).reduce(countReducer, []);
+        console.log(optionCounts)
+    }
+
+    function combineReducer(vs, ballot) {
+        return vs.concat(ballot.votes);
+    }
+    
+    function countReducer(counts, vote) {
+        if (counts[vote.option_id]) {
+            counts[vote.option_id] += vote.state;
+        } else {
+            counts[vote.option_id] = vote.state;
+        }
+        return counts;
     }
 
     function voteStringFromState() {
@@ -45,7 +67,7 @@
         let ret = JSON.stringify(
             {"question_id": id, 
              "votes": votes.map( function(vote, index) { 
-                 return {"id": index, "state": (vote === true ? 1 : (vote === false ? 0 : vote))}})})
+                 return {"option_id": index, "state": (vote === true ? 1 : (vote === false ? 0 : vote))}})})
         console.log(ret)
         return ret
     }
@@ -96,7 +118,7 @@
     }
 </style>
 
-<main class="darkBackground">
+<div class="darkBackground">
     <form id="newVoteForm" on:submit|preventDefault={handleNewVote}>
         {#if q.name}
             <h3>{q.name}</h3>
@@ -114,4 +136,11 @@
             Submit
         </button>
     </form>
-</main>
+</div>
+{#if q.type == "approval"}
+    <ApprovalResults {q} {optionCounts}/>
+{:else if q.type == "runoff"}
+    <p>runoff</p>
+{:else}
+    <p>plurality</p>
+{/if}

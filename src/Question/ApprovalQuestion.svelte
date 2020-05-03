@@ -55,7 +55,7 @@
     <p>Select all options you are okay with.</p>
     {#each q.options as option}
         <label class="clickable">
-            <input type="checkbox" bind:checked={votes[option.id]}>
+            <input type="checkbox" bind:checked={votes[option.option_id]}>
             <span><img src="images/done.svg" alt="checkmark"/></span>
             {option.text}
         </label>

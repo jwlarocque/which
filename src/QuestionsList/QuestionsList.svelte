@@ -25,6 +25,8 @@
 <style>
 	main {
 		text-align: left;
+		max-width: 30em;
+		margin: 0 auto;
 	}
 
 	h3 {

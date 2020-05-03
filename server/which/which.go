@@ -53,7 +53,7 @@ type QuestionStore interface {
 }
 
 type Option struct {
-	ID         int    `json:"id" db:"option_id"` // TODO: rename to option_id in json
+	ID         int    `json:"option_id" db:"option_id"` // TODO: rename to option_id in json
 	Text       string `json:"text" db:"text"`
 	QuestionID string `json:"-" db:"question_id"`
 }
@@ -77,7 +77,7 @@ type BallotStore interface {
 
 type Vote struct {
 	BallotID int `json:"-" db:"ballot_id"`
-	OptionID   int    `json:"id" db:"option_id"`
+	OptionID   int    `json:"option_id" db:"option_id"`
 	State      int    `json:"state" db:"state"`
 }
 
