@@ -1,6 +1,5 @@
 <script>
 	import {onMount} from 'svelte';
-	import {select} from 'd3-selection';
 	import NewQuestion from './NewQuestion/NewQuestion.svelte';
 	import QuestionsList from './QuestionsList/QuestionsList.svelte';
 	import Question from './Question/Question.svelte';
@@ -198,6 +197,11 @@
 	}
 
 </style>
+
+<svelte:head>
+  <title>Which?</title>
+  <link rel="icon" type="image/png" href="favicon.ico"/>
+</svelte:head>
 
 <main>
 	<nav>

@@ -170,6 +170,7 @@ type NewVote struct {
 }
 
 // TODO: alert user that vote failed
+// TODO: CRITICAL: limit state depending on question type (to 1 for approval)
 func (handler *NewVote) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	session, err := sessionFromRequest(req, handler.sessionStore)
 	if err != nil {

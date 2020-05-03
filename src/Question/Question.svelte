@@ -14,6 +14,7 @@
     getQuestion(id);
     getBallots(id);
 
+    // TODO: also retrieve user's current votes and fill them in
     async function getQuestion(question_id) {
         const res = await fetch("qs/q/" + question_id);
 		const data = await res.json();
