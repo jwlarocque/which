@@ -159,16 +159,28 @@ func (store BallotStore) Update(ballot which.Ballot) (int, error) {
 			}
 		}
 		return ballotID, nil
-	} else {
-		return -1, errors.New("insert query returned empty ballotID")
 	}
+	return -1, errors.New("insert query returned empty ballotID")
+}
+
+func (store BallotStore) Fetch(questionID string, userID string) (which.Ballot, error) {
+	ballot := which.Ballot{}
+	err := store.DB.Select(&ballot, "SELECT ballot_id, question_id, user_id FROM ballots WHERE question_id=$1 AND user_id=$2", questionID, userID)
+	if err != nil {
+		return ballot, fmt.Errorf("failed to fetch ballot for question ID: %s, user ID: %s, error: %v", questionID, userID, err)
+	}
+	ballot.Votes, err = store.VoteStore.FetchAll(ballot.ID)
+	if err != nil {
+		return ballot, fmt.Errorf("incomplete votes fetch: %v", err)
+	}
+	return ballot, nil
 }
 
 func (store BallotStore) FetchAll(questionID string) ([]*which.Ballot, error) {
 	ballots := []*which.Ballot{}
 	err := store.DB.Select(&ballots, "SELECT ballot_id, question_id, user_id FROM ballots WHERE question_id=$1", questionID)
 	if err != nil {
-		return ballots, fmt.Errorf("failed to fetch votes for question ID: %s, error: %v", questionID, err)
+		return ballots, fmt.Errorf("failed to fetch ballots for question ID: %s, error: %v", questionID, err)
 	}
 	for _, ballot := range(ballots) {
 		ballot.Votes, err = store.VoteStore.FetchAll(ballot.ID)
