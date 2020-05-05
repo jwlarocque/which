@@ -15,10 +15,6 @@
         grid-row-gap: 0.4em;
         grid-column-gap: 0.4em;
         grid-template-columns: 1fr 3fr;
-        max-width: 30em;
-        margin: 2em auto;
-        text-align: left;
-        padding: 1em;
     }
 
     .barChart p {
@@ -30,14 +26,15 @@
     }
 
     .barChart div {
+        box-sizing: border-box;
         grid-column: 2;
         background-color: #242020;
         color: #eef2f3;
         text-align: right;
         padding: 0.4em;
-        height: 1em;
+        height: 1.8em;
         margin: auto 0;
-        min-width: 0.6em;
+        min-width: 1.4em;
         transition: 0.6s ease-in-out;
     }
 </style>

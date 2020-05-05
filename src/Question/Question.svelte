@@ -94,15 +94,11 @@
 </script>
 
 <style>
-    main :global(*) {
-        /*background-color: red;*/
-    }
-
     h3 {
 		color: #ee4035;
 	}
     
-    form {
+    form, #results {
         text-align: left;
         max-width: 30em;
         margin: 0 auto;
@@ -138,10 +134,13 @@
         </button>
     </form>
 </div>
-{#if q.type == "approval"}
-    <ApprovalResults {q} {optionCounts}/>
-{:else if q.type == "runoff"}
-    <p>runoff</p>
-{:else}
-    <p>plurality</p>
-{/if}
+<div id="results">
+    <h3>Results</h3>
+    {#if q.type == "approval"}
+        <ApprovalResults {q} {optionCounts}/>
+    {:else if q.type == "runoff"}
+        <p>runoff</p>
+    {:else}
+        <p>plurality</p>
+    {/if}
+</div>
