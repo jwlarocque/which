@@ -1,8 +1,12 @@
 <script>
+    import BarChart from "../Charts/BarChart.svelte"
     export let optionCounts;
     export let q;
-    
+
     $: sortedOptions = q.options.concat().sort((a, b) => optionCounts[b.option_id] - optionCounts[a.option_id]);
+
+    $: data = sortedOptions.map((option, i) => ({y: i, x: optionCounts[option.option_id]}));
+    $: yLabels = sortedOptions.map((option) => option.text);
 </script>
 
 <style>
@@ -11,9 +15,10 @@
         grid-row-gap: 0.4em;
         grid-column-gap: 0.4em;
         grid-template-columns: 1fr 5fr;
-        width: 30em;
+        max-width: 30em;
         margin: 2em auto;
         text-align: left;
+        padding: 1em;
     }
 
     .barChart p {
@@ -31,6 +36,8 @@
         min-width: 1em !important;
     }
 </style>
+
+<BarChart {data} {yLabels}/>
 
 {#if optionCounts.length && q}
     <div class="barChart">
