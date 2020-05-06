@@ -18,7 +18,7 @@
 
     let newQFormVisible = true;
 	let newQName = "";
-	let newQOptions = [{id: 0, text: ""}, {id: 1, text: ""}, {id: 2, text: ""}];
+	let newQOptions = [{option_id: 0, text: ""}, {option_id: 1, text: ""}, {option_id: 2, text: ""}];
 
     newQOptions.forEach(q => q.placeholder = randomJam());
     
@@ -66,7 +66,7 @@
 
 	function handleOptionUpdate() {
 		if (newQOptions[newQOptions.length - 1].text !== "" && newQOptions.length < MAX_OPTIONS) {
-			newQOptions = [...newQOptions, {id: newQOptions.length, text: "", placeholder: randomJam()}];
+			newQOptions = [...newQOptions, {option_id: newQOptions.length, text: "", placeholder: randomJam()}];
 		}
 	}
 </script>

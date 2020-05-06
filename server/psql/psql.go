@@ -46,6 +46,7 @@ func (store SessionStore) Fetch(sessionID string) (which.Session, error) {
 type QuestionStore struct {
 	DB          *sqlx.DB
 	OptionStore which.OptionStore
+	BallotStore which.BallotStore
 }
 
 func (store QuestionStore) Insert(q which.Question) (string, error) {
@@ -97,6 +98,25 @@ func (store QuestionStore) FetchAuthoredBy(userID string) ([]*which.Question, er
 	return qs, nil
 }
 
+func (store QuestionStore) Remove(questionID string) error {
+	// remove dependent ballots (votes are deleted by cascade)
+	err := store.BallotStore.RemoveAll(questionID)
+	if err != nil {
+		return fmt.Errorf("failed to remove ballots for question '%s', error: %v", questionID, err)
+	}
+	// remove dependent options
+	err = store.OptionStore.RemoveAll(questionID)
+	if err != nil {
+		return fmt.Errorf("failed to remove options for question '%s', error: %v", questionID, err)
+	}
+	// remove question
+	_, err = store.DB.Exec("DELETE FROM questions WHERE question_id=$1", questionID)
+	if err != nil {
+		return fmt.Errorf("failed to remove question '%s', error: %v", questionID, err)
+	}
+	return nil
+}
+
 type OptionStore struct {
 	DB *sqlx.DB
 }
@@ -118,8 +138,13 @@ func (store OptionStore) FetchAll(questionID string) ([]*which.Option, error) {
 	return options, nil
 }
 
+func (store OptionStore) RemoveAll(questionID string) error {
+	_, err := store.DB.Exec("DELETE FROM options WHERE question_id=$1", questionID)
+	return err
+}
+
 type BallotStore struct {
-	DB *sqlx.DB
+	DB        *sqlx.DB
 	VoteStore which.VoteStore
 }
 
@@ -139,7 +164,7 @@ func (store BallotStore) Update(ballot which.Ballot) (int, error) {
 		SELECT ballot_id FROM ballots
 			WHERE question_id=:question_id
 			AND user_id=:user_id
-		LIMIT 1`, 
+		LIMIT 1`,
 		ballot)
 	if err != nil {
 		return -1, fmt.Errorf("failed to insert ballot: %v", err)
@@ -182,13 +207,18 @@ func (store BallotStore) FetchAll(questionID string) ([]*which.Ballot, error) {
 	if err != nil {
 		return ballots, fmt.Errorf("failed to fetch ballots for question ID: %s, error: %v", questionID, err)
 	}
-	for _, ballot := range(ballots) {
+	for _, ballot := range ballots {
 		ballot.Votes, err = store.VoteStore.FetchAll(ballot.ID)
 		if err != nil {
 			return ballots, fmt.Errorf("incomplete votes fetch: %v", err)
 		}
 	}
 	return ballots, nil
+}
+
+func (store BallotStore) RemoveAll(ballotID string) error {
+	_, err := store.DB.Exec("DELETE FROM ballots WHERE question_id=$1", ballotID)
+	return err
 }
 
 type VoteStore struct {

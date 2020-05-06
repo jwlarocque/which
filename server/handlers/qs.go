@@ -1,5 +1,7 @@
 package handlers
 
+// TODO: this file is getting out of hand, especially the Qs handler.  Do something about it.
+
 import (
 	"encoding/json"
 	"fmt"
@@ -13,11 +15,12 @@ import (
 // == Qs root handler ================================
 
 type Qs struct {
-	ListHandler        *List
-	NewQuestionHandler *NewQuestion
-	GetQuestionHandler *GetQuestion
-	NewVoteHandler     *NewVote
-	GetBallotsHandler *GetBallots
+	ListHandler           *List
+	NewQuestionHandler    *NewQuestion
+	GetQuestionHandler    *GetQuestion
+	DeleteQuestionHandler *DeleteQuestion
+	NewVoteHandler        *NewVote
+	GetBallotsHandler     *GetBallots
 }
 
 func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore) *Qs {
@@ -35,10 +38,15 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, b
 
 	qs.NewVoteHandler = &NewVote{
 		sessionStore: sessionStore,
-		ballotStore:   ballotStore,
+		ballotStore:  ballotStore,
 	}
 
 	qs.GetQuestionHandler = &GetQuestion{
+		questionStore: questionStore,
+	}
+
+	qs.DeleteQuestionHandler = &DeleteQuestion{
+		sessionStore:  sessionStore,
 		questionStore: questionStore,
 	}
 
@@ -62,6 +70,8 @@ func (handler *Qs) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	} else if head == "q" {
 		req.URL.Path = tail
 		handler.GetQuestionHandler.ServeHTTP(resp, req)
+	} else if head == "del" {
+		handler.DeleteQuestionHandler.ServeHTTP(resp, req)
 	} else if head == "vs" {
 		// handle send votes
 		handler.GetBallotsHandler.ServeHTTP(resp, req)
@@ -139,6 +149,46 @@ func createQuestionFromRequest(req *http.Request) (which.Question, error) {
 		return q, fmt.Errorf("failed to unmarshal json: %v", err)
 	}
 	return q, nil
+}
+
+// == DeleteQuestion handler ================================
+
+type DeleteQuestion struct {
+	sessionStore  which.SessionStore
+	questionStore which.QuestionStore
+}
+
+func (handler *DeleteQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	session, err := sessionFromRequest(req, handler.sessionStore)
+	if err != nil {
+		http.Error(resp, "not authorized to delete questions", http.StatusUnauthorized)
+		return
+	}
+	questionID, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("failed to read question ID from request body: %v\n", err)
+		http.Error(resp, "failed to read question ID from request body", http.StatusInternalServerError)
+		return
+	}
+	log.Println(string(questionID)) // TODO: remove debug
+	q, err := handler.questionStore.Fetch(string(questionID))
+	if err != nil {
+		log.Printf("failed to verify deletion question ownership: %v\n", err)
+		http.Error(resp, "failed to verify ownership", http.StatusInternalServerError)
+		return
+	}
+	if session.UserID != q.UserID {
+		log.Printf("question ownership mismatch; session UserID: '%s', question UserID: '%s'", session.UserID, q.UserID)
+		http.Error(resp, "question ownership mismatch", http.StatusForbidden)
+		return
+	}
+	err = handler.questionStore.Remove(q.ID)
+	if err != nil {
+		log.Printf("failed to remove question: %v", err)
+		http.Error(resp, "failed to remove question", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(resp, "{\"ok\": \"true\"}\n") // TODO: what is the idiomatic way to send OK?  this seems weird.
 }
 
 // == GetQuestion handler ================================

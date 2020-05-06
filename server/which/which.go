@@ -50,6 +50,7 @@ type QuestionStore interface {
 	Insert(Question) (questionID string, err error)
 	Fetch(questionID string) (Question, error)
 	FetchAuthoredBy(userID string) ([]*Question, error)
+	Remove(questionID string) error
 }
 
 type Option struct {
@@ -61,6 +62,7 @@ type Option struct {
 type OptionStore interface {
 	Insert(Option) error
 	FetchAll(questionID string) ([]*Option, error)
+	RemoveAll(questionID string) error
 }
 
 type Ballot struct {
@@ -73,6 +75,7 @@ type Ballot struct {
 type BallotStore interface {
 	Update(Ballot) (int, error)
 	FetchAll(questionID string) ([]*Ballot, error)
+	RemoveAll(questionID string) error
 }
 
 type Vote struct {
