@@ -119,12 +119,14 @@
     <form id="newVoteForm" on:submit|preventDefault={handleNewVote}>
         {#if q.name}
             <h3>{q.name}</h3>
-            {#if q.type == "approval"}
+            {#if q.type == 0} <!-- TODO: question type enum -->
                 <ApprovalQuestion {q} {votes}/>
-            {:else if q.type == "runoff"}
+            {:else if q.type == 1}
                 <p>runoff</p>
-            {:else}
+            {:else if q.type == 2}
                 <p>plurality</p>
+            {:else}
+                <p>error</p>
             {/if}
         {:else}
             <p class="statusMessage">Loading...</p>
@@ -136,11 +138,13 @@
 </div>
 <div id="results">
     <h3>Results</h3>
-    {#if q.type == "approval"}
+    {#if q.type == 0}
         <ApprovalResults {q} {optionCounts}/>
-    {:else if q.type == "runoff"}
+    {:else if q.type == 1}
         <p>runoff</p>
-    {:else}
+    {:else if q.type == 2}
         <p>plurality</p>
+    {:else}
+        <p>error</p>
     {/if}
 </div>

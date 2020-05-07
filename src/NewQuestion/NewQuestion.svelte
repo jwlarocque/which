@@ -11,10 +11,11 @@
 		return "e.g., " + OPTION_PLACEHOLDERS[Math.floor(Math.random() * OPTION_PLACEHOLDERS.length)];
 	}
 
+	// TODO: use some kind of enum for question types
 	const newQTypes = [
-		{value: "approval", text: "Approval", explainer: "<p>Good for making an everyday choice which most people are okay with.</p><p>Respondents select all the options they would be okay with, and the winner is the option the most people approve of.</p><p>More information: <a href=\"https://www.electionscience.org/library/approval-voting/\">ElectionScience.org</a></p>"}, 
-		{value: "runoff", text: "Ranked Choice", explainer: "<p>Good for selecting an option with true majority support, and allows people to express their preference for choices which are unlikely to win.</p><p>Respondents rank the choices in order of preference.</p><p>More information: <a href=\"https://www.fairvote.org/rcv#where_is_ranked_choice_voting_used\">FairVote.org</a></p>"}, 
-		{value: "plurality", text: "Plurality", explainer: "<p>It's straightforward I guess, if that's what you're looking for in a voting system.</p><p>Respondents pick one option; the option with the most votes wins.</p><p>More information (first section): <a href=\"https://www.fairvote.org/plurality_majority_systems\">FairVote.org</a></p>"}];
+		{value: 0, text: "Approval", explainer: "<p>Good for making an everyday choice which most people are okay with.</p><p>Respondents select all the options they would be okay with, and the winner is the option the most people approve of.</p><p>More information: <a href=\"https://www.electionscience.org/library/approval-voting/\">ElectionScience.org</a></p>"}, 
+		{value: 1, text: "Ranked Choice", explainer: "<p>Good for selecting an option with true majority support, and allows people to express their preference for choices which are unlikely to win.</p><p>Respondents rank the choices in order of preference.</p><p>More information: <a href=\"https://www.fairvote.org/rcv#where_is_ranked_choice_voting_used\">FairVote.org</a></p>"}, 
+		{value: 2, text: "Plurality", explainer: "<p>It's straightforward I guess, if that's what you're looking for in a voting system.</p><p>Respondents pick one option; the option with the most votes wins.</p><p>More information (first section): <a href=\"https://www.fairvote.org/plurality_majority_systems\">FairVote.org</a></p>"}];
 	let newQType = newQTypes[0];
 
     let newQFormVisible = true;

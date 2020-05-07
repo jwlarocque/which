@@ -13,6 +13,19 @@ const (
 	CookieDuration    = 24 * time.Hour
 )
 
+// question type "enum"
+type QType int
+
+const (
+	QTypeApproval = iota
+	QTypeRunoff
+	QTypePlurality
+)
+
+func (t QType) String() string {
+	return [...]string{"Approval", "Runoff", "Plurality"}[t]
+}
+
 // server-DB structs, mostly for auth
 
 type User struct {
@@ -42,7 +55,7 @@ type Question struct {
 	ID      string    `json:"question_id" db:"question_id"`
 	UserID  string    `json:"-" db:"user_id"`
 	Name    string    `json:"name" db:"name"`
-	Type    string    `json:"type" db:"type"`
+	Type    QType     `json:"type" db:"type"`
 	Options []*Option `json:"options" db:"-"`
 }
 
@@ -66,7 +79,7 @@ type OptionStore interface {
 }
 
 type Ballot struct {
-	ID         int  `json:"ballot_id" db:"ballot_id"`
+	ID         int     `json:"ballot_id" db:"ballot_id"`
 	QuestionID string  `json:"question_id" db:"question_id"`
 	UserID     string  `json:"-" db:"user_id"`
 	Votes      []*Vote `json:"votes"`
@@ -80,8 +93,8 @@ type BallotStore interface {
 
 type Vote struct {
 	BallotID int `json:"-" db:"ballot_id"`
-	OptionID   int    `json:"option_id" db:"option_id"`
-	State      int    `json:"state" db:"state"`
+	OptionID int `json:"option_id" db:"option_id"`
+	State    int `json:"state" db:"state"`
 }
 
 type VoteStore interface {

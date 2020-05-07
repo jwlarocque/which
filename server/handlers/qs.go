@@ -37,8 +37,9 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, b
 	}
 
 	qs.NewVoteHandler = &NewVote{
-		sessionStore: sessionStore,
-		ballotStore:  ballotStore,
+		sessionStore:  sessionStore,
+		questionStore: questionStore,
+		ballotStore:   ballotStore,
 	}
 
 	qs.GetQuestionHandler = &GetQuestion{
@@ -120,7 +121,9 @@ func (handler *NewQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 		http.Error(resp, "not authorized to submit questions", http.StatusUnauthorized)
 		return
 	}
-	q, err := createQuestionFromRequest(req)
+	var q which.Question
+	unmarshaled, err := unmarshalStructFromRequest(req, &q)
+	q = *unmarshaled.(*which.Question)
 	if err != nil {
 		log.Printf("failed to create new question: %v\n", err)
 		http.Error(resp, "failed to create new question", http.StatusInternalServerError)
@@ -136,19 +139,6 @@ func (handler *NewQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	if err = json.NewEncoder(resp).Encode(q); err != nil {
 		log.Printf("failed to encode new question JSON response: %v\n", err)
 	}
-}
-
-func createQuestionFromRequest(req *http.Request) (which.Question, error) {
-	var q which.Question
-	data, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return q, fmt.Errorf("failed to read request body: %v", err)
-	}
-	err = json.Unmarshal(data, &q)
-	if err != nil {
-		return q, fmt.Errorf("failed to unmarshal json: %v", err)
-	}
-	return q, nil
 }
 
 // == DeleteQuestion handler ================================
@@ -215,23 +205,34 @@ func (handler *GetQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 // == NewVote handler ================================
 
 type NewVote struct {
-	sessionStore which.SessionStore
-	ballotStore  which.BallotStore
+	sessionStore  which.SessionStore
+	questionStore which.QuestionStore
+	ballotStore   which.BallotStore
 }
 
-// TODO: alert user that vote failed
-// TODO: CRITICAL: limit state depending on question type (to 1 for approval)
+// TODO: alert user that vote failed (this is a frontend issue...)
 func (handler *NewVote) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	session, err := sessionFromRequest(req, handler.sessionStore)
 	if err != nil {
 		http.Error(resp, "not authorized to vote (oof)", http.StatusUnauthorized)
 		return
 	}
-	ballot, err := createBallotFromRequest(req)
+	var ballot which.Ballot
+	unmarshaled, err := unmarshalStructFromRequest(req, &ballot)
+	ballot = *unmarshaled.(*which.Ballot)
 	ballot.UserID = session.UserID
 	if err != nil {
 		log.Printf("failed to create new votes: %v\n", err)
 		http.Error(resp, "failed to create new votes", http.StatusInternalServerError)
+		return
+	}
+	q, err := handler.questionStore.Fetch(ballot.QuestionID)
+	if err != nil {
+		log.Printf("failed to get question for ballot: %v\n", err)
+		http.Error(resp, "failed to get question for ballot", http.StatusInternalServerError)
+	}
+	if !ballotValid(ballot, q.Type) {
+		http.Error(resp, "invalid ballot", http.StatusBadRequest)
 		return
 	}
 	_, err = handler.ballotStore.Update(ballot)
@@ -243,18 +244,18 @@ func (handler *NewVote) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(resp, "{\"ok\": \"true\"}\n")
 }
 
-// TODO: code is identical to createQuestionFromRequest, reduce repetition
-func createBallotFromRequest(req *http.Request) (which.Ballot, error) {
-	var vs which.Ballot
-	data, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return vs, fmt.Errorf("failed to read request body: %v", err)
+func ballotValid(ballot which.Ballot, qType which.QType) bool {
+	switch qType {
+	case which.QTypeApproval:
+		for _, vote := range ballot.Votes {
+			if vote.State > 1 {
+				return false
+			}
+		}
+	default:
+		return false
 	}
-	err = json.Unmarshal(data, &vs)
-	if err != nil {
-		return vs, fmt.Errorf("failed to unmarshal json: %v", err)
-	}
-	return vs, nil
+	return true
 }
 
 // == GetVotes handler ================================

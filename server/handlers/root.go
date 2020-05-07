@@ -4,8 +4,10 @@ package handlers
 // client and server.
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
@@ -108,4 +110,16 @@ func sessionFromRequest(req *http.Request, store which.SessionStore) (which.Sess
 		return which.Session{}, errors.New("session expired")
 	}
 	return session, nil
+}
+
+func unmarshalStructFromRequest(req *http.Request, v interface{}) (interface{}, error) {
+	data, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return v, fmt.Errorf("failed to read request body: %v", err)
+	}
+	err = json.Unmarshal(data, &v)
+	if err != nil {
+		return v, fmt.Errorf("failed to unmarshal json: %v", err)
+	}
+	return v, nil
 }

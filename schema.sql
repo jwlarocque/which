@@ -81,7 +81,7 @@ ALTER TABLE public.options OWNER TO jwlarocque;
 CREATE TABLE public.questions (
     name character varying(128),
     user_id character varying(80) NOT NULL,
-    type character varying(32) NOT NULL,
+    type integer NOT NULL,
     question_id uuid DEFAULT public.uuid_generate_v1() NOT NULL
 );
 
