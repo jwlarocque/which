@@ -105,13 +105,25 @@
         padding: 1em;
     }
 
-    button {
+    form button {
         width: 100%;
         margin: 1.4em 0 1em;
     }
 
     .statusMessage {
         text-align: center;
+    }
+
+    #results div {
+        width: 100%;
+        display: inline-flex;
+        justify-content: space-between;
+    }
+
+    #results button {
+        max-height: 2em;
+        margin: auto 0;
+        cursor: pointer;
     }
 </style>
 
@@ -137,7 +149,10 @@
     </form>
 </div>
 <div id="results">
-    <h3>Results</h3>
+    <div>
+        <h3>Results</h3>
+        <button class="button" on:click={getBallots(id)}>Refresh</button>
+    </div>
     {#if q.type == 0}
         <ApprovalResults {q} {optionCounts}/>
     {:else if q.type == 1}
