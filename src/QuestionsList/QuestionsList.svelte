@@ -1,5 +1,5 @@
 <script>
-	import {flip} from 'svelte/animate';
+	import {fade} from 'svelte/transition';
 	import {qs} from "../stores.js";
 
 	// TODO: put this in onMount
@@ -47,9 +47,9 @@
 		});
 		
 		if (res.ok) {
-			questions = questions.filter((e) => e !== q);
+			qs.update((value) => value.filter((e) => e !== q));
 		} else {
-			// TODO: add .catch and alert user of failed delete
+			alert("failed to delete question: " + res.statusText);
 		}
 	}
 </script>
@@ -70,23 +70,23 @@
 		color: rgba(0, 0, 0, 0.2);
 	}
 
-	#questionsList {
+	.questionRow {
 		display: grid;
 		grid-template-columns: 3fr 1fr 1fr 1fr;
 		grid-column-gap: 0.4em;
 	}
 
-	#questionsList hr, .across {
+	.questionRow hr, .across {
 		grid-column: 1/6;
 		width: 100%;
 	}
 
-	#questionsList .icon {
+	.questionRow .icon {
 		margin: auto;
 		position: relative;
 	}
 
-	#questionsList img {
+	.questionRow img {
 		margin: auto;
 		cursor: pointer;
 		background-color: #eef2f3;
@@ -116,22 +116,26 @@
 		<p>Loading...</p>
 	{:then questions}
 		<div id="questionsList">
-			<h3>Your Questions</h3>
-			<h4 class="center">Votes</h4>
-			<h4 class="center">Link</h4>
-			<h4 class="center">Delete</h4>
+			<div class="questionRow">
+				<h3>Your Questions</h3>
+				<h4 class="center">Votes</h4>
+				<h4 class="center">Link</h4>
+				<h4 class="center">Delete</h4>
+			</div>
 			{#if questions.length > 0}
 				{#each questions as q, i}
-					{#if i > 0}<hr/>{:else}<div class="across"></div>{/if}
-					<p class="question"><a href={"/?q=" + q.question_id}>{q.name}</a></p>
-					<p class="center">0<!-- TODO: actually deliver vote counts with question --></p>
-					<div class="icon">
-						<img class="center" src="images/done.svg" alt="copied"/>
-						<img class="center" src="images/copy.svg" alt="copy to clipboard" on:click={copyToClipboard(window.location.host + "/?q=" + q.question_id, this)}/>
-					</div>
-					<div class="icon">
-						<img class="center" src="images/done.svg" alt="deleted"/>
-						<img class="center" src="images/delete.svg" alt="delete" on:click={deleteQuestion(q, this)}/>
+					{#if i > 0}<hr transition:fade/>{:else}<div class="across"></div>{/if}
+					<div class="questionRow" transition:fade>
+						<p class="question"><a href={"/?q=" + q.question_id}>{q.name}</a></p>
+						<p class="center">0<!-- TODO: actually deliver vote counts with question --></p>
+						<div class="icon">
+							<img class="center" src="images/done.svg" alt="copied"/>
+							<img class="center" src="images/copy.svg" alt="copy to clipboard" title="copy to clipboard" on:click={copyToClipboard(window.location.host + "/?q=" + q.question_id, this)}/>
+						</div>
+						<div class="icon">
+							<img class="center" src="images/done.svg" alt="deleted"/>
+							<img class="center" src="images/delete.svg" alt="delete" title="delete" on:click={deleteQuestion(q, this)}/>
+						</div>
 					</div>
 				{/each}
 			{:else}

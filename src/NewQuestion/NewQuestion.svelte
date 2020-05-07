@@ -1,5 +1,6 @@
 <script>
-    import {qs} from "../stores.js"
+	import {slide} from 'svelte/transition';
+    import {qs} from "../stores.js";
 
     const MAX_OPTIONS = 50;
 	const OPTION_PLACEHOLDERS = ["Apricot", "Rhubarb", "Sour Cherry", "Raspberry", "Hot Pepper", "Gooseberry", "Peach", "Quince", "Lingonberry", "Quince", "Cloudberry", "Strawberry", "Blackberry", "Blueberry", "Grape", "Orange Marmalade", "Plum", "Apple Butter", "Fig"]; // example options
@@ -39,6 +40,7 @@
         newQName = "";
         newQOptions.forEach(option => option.text = "");
 		newQOptions = newQOptions;
+		handleOptionUpdate();
     }
 
     async function handleNewQuestion() {
@@ -67,6 +69,9 @@
 	function handleOptionUpdate() {
 		if (newQOptions[newQOptions.length - 1].text !== "" && newQOptions.length < MAX_OPTIONS) {
 			newQOptions = [...newQOptions, {option_id: newQOptions.length, text: "", placeholder: randomJam()}];
+		} else if (newQOptions.length > 3 && newQOptions[newQOptions.length - 1].text === "" && newQOptions[newQOptions.length - 2].text === "") {
+			newQOptions = [...newQOptions.slice(0, newQOptions.length - 1)];
+			handleOptionUpdate(); // sometimes you use recursion and it's okay
 		}
 	}
 </script>
@@ -131,14 +136,14 @@
 </style>
 
 <main class="darkBackground">
-	<form id="newQForm" on:submit|preventDefault={handleNewQuestion} class={newQFormVisible ? "visible" : "hidden"}>
+	<form id="newQForm" on:submit|preventDefault={handleNewQuestion} class={newQFormVisible ? "visible" : "hidden"} autocomplete="off">
 		<div class="formItem">
 			<label class="formLabel"><h3>New Question</h3></label>
 			<input id="newQName" type="text" required placeholder="e.g., Which jam would you prefer?" bind:value={newQName} maxlength={MAX_FIELD_CHARS}>
 		</div>
 		<label>Options</label>
 		{#each newQOptions as option}
-			<div class="newQOption">
+			<div class="newQOption" transition:slide>
 				<input bind:value={option.text} placeholder={option.placeholder} on:input={handleOptionUpdate} maxlength={MAX_FIELD_CHARS}>
 			</div>
 		{/each}

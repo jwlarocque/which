@@ -1,4 +1,5 @@
 <script>
+    import {scale} from 'svelte/transition';
     export let q;
     export let votes;
 
@@ -32,6 +33,8 @@
         margin: 0.6em;
         display: inline-flex;
         user-select: none;
+
+        transition: 0.1s ease-in-out;
     }
 
     input[type="checkbox"]:checked + span {
@@ -42,11 +45,12 @@
         height: 1.4em;
         margin: auto;
         width: auto;
-        visibility: hidden;
+        opacity: 0.0;
+        transition: 0.1s ease-in-out;
     }
 
     input[type="checkbox"]:checked + span > img {
-        visibility: visible;
+        opacity: 1.0;
     }
 </style>
 

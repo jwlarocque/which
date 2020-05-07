@@ -189,7 +189,6 @@ type Status struct {
 
 func (handler *Status) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	_, err := sessionFromRequest(req, handler.sessionStore)
-	log.Println(err)
 	fmt.Fprintf(resp, "{\"authed\": \"%v\"}\n", err == nil)
 }
 

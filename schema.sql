@@ -228,7 +228,7 @@ ALTER TABLE ONLY public.sessions
 --
 
 ALTER TABLE ONLY public.votes
-    ADD CONSTRAINT votes_ballot_id_fkey FOREIGN KEY (ballot_id) REFERENCES public.ballots(ballot_id);
+    ADD CONSTRAINT votes_ballot_id_fkey FOREIGN KEY (ballot_id) REFERENCES public.ballots(ballot_id) ON DELETE CASCADE;
 
 
 --
