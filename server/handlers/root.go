@@ -31,11 +31,11 @@ type Root struct {
 	QsHandler     *Qs
 }
 
-func NewRoot(userStore which.UserStore, sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore) *Root {
+func NewRoot(userStore which.UserStore, sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore, resultStore which.ResultStore) *Root {
 	root := &Root{
 		StaticHandler: &Static{},
 		AuthHandler:   NewAuth(userStore, sessionStore),
-		QsHandler:     NewQs(sessionStore, questionStore, ballotStore),
+		QsHandler:     NewQs(sessionStore, questionStore, ballotStore, resultStore),
 	}
 	return root
 }

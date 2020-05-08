@@ -23,7 +23,7 @@ type Qs struct {
 	GetBallotsHandler     *GetBallots
 }
 
-func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore) *Qs {
+func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore, resultStore which.ResultStore) *Qs {
 	qs := &Qs{}
 
 	qs.ListHandler = &List{
@@ -40,6 +40,7 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, b
 		sessionStore:  sessionStore,
 		questionStore: questionStore,
 		ballotStore:   ballotStore,
+		resultStore:   resultStore,
 	}
 
 	qs.GetQuestionHandler = &GetQuestion{
@@ -160,7 +161,6 @@ func (handler *DeleteQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Req
 		http.Error(resp, "failed to read question ID from request body", http.StatusInternalServerError)
 		return
 	}
-	log.Println(string(questionID)) // TODO: remove debug
 	q, err := handler.questionStore.Fetch(string(questionID))
 	if err != nil {
 		log.Printf("failed to verify deletion question ownership: %v\n", err)
@@ -178,7 +178,8 @@ func (handler *DeleteQuestion) ServeHTTP(resp http.ResponseWriter, req *http.Req
 		http.Error(resp, "failed to remove question", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(resp, "{\"ok\": \"true\"}\n") // TODO: what is the idiomatic way to send OK?  this seems weird.
+	// TODO: what is the idiomatic way to send OK?  this seems weird.
+	fmt.Fprintf(resp, "{\"ok\": \"true\"}\n")
 }
 
 // == GetQuestion handler ================================
@@ -208,6 +209,7 @@ type NewVote struct {
 	sessionStore  which.SessionStore
 	questionStore which.QuestionStore
 	ballotStore   which.BallotStore
+	resultStore   which.ResultStore
 }
 
 // TODO: alert user that vote failed (this is a frontend issue...)
@@ -235,13 +237,20 @@ func (handler *NewVote) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		http.Error(resp, "invalid ballot", http.StatusBadRequest)
 		return
 	}
+	// fetch previous ballot, used to compute delta in countUpdateVotes
+	oldBallot, err := handler.ballotStore.Fetch(q.ID, ballot.UserID)
+	if err != nil {
+		// TODO: better flow than using -1 as invalid ballot
+		oldBallot = which.Ballot{ID: -1}
+	}
 	_, err = handler.ballotStore.Update(ballot)
 	if err != nil {
 		log.Printf("failed to insert/update ballot: %v\n", err)
 		http.Error(resp, "failed to insert/update ballot", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(resp, "{\"ok\": \"true\"}\n")
+	handler.countUpdateVotes(ballot, oldBallot, q)
+	//fmt.Fprintf(resp, "{\"ok\": \"true\"}\n")
 }
 
 func ballotValid(ballot which.Ballot, qType which.QType) bool {
@@ -256,6 +265,57 @@ func ballotValid(ballot which.Ballot, qType which.QType) bool {
 		return false
 	}
 	return true
+}
+
+func (handler *NewVote) countUpdateVotes(ballot which.Ballot, oldBallot which.Ballot, question which.Question) error {
+	if question.Type == which.QTypeApproval {
+		if oldBallot.ID < 0 {
+			// we failed to retrieve the old ballot earlier, assume one might
+			// have existed so recompute total from scratch
+			return handler.recomputeVotes(question)
+		}
+		// compute vote delta between oldBallot and ballot and apply it to
+		// the Results in Question.Rounds[0]
+		return handler.recomputeVotes(question) // TODO: implement delta vote counting
+	}
+	return handler.recomputeVotes(question)
+}
+
+// TODO: this function is quite complex, consider breaking it up
+func (handler *NewVote) recomputeVotes(question which.Question) error {
+	ballots, err := handler.ballotStore.FetchAll(question.ID)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve all ballots: %v", err)
+	}
+	if question.Type == which.QTypeApproval {
+		results := make(map[int]*which.Result)
+		for _, ballot := range ballots {
+			for _, vote := range ballot.Votes {
+				_, exists := results[vote.OptionID]
+				if !exists {
+					results[vote.OptionID] = &which.Result{
+						QuestionID: question.ID,
+						RoundNum:   0,
+						OptionID:   vote.OptionID,
+						NumVotes:   0,
+					}
+				}
+				if vote.State > 0 {
+					results[vote.OptionID].NumVotes++
+				}
+			}
+		}
+		for _, result := range results {
+			err = handler.resultStore.Update(*result)
+			if err != nil {
+				return fmt.Errorf("failed to store computed results: %v", err)
+			}
+		}
+	} else {
+		// TODO: implement recompute for other question types
+		return fmt.Errorf("question type %v not yet implemented", question.Type)
+	}
+	return nil
 }
 
 // == GetVotes handler ================================

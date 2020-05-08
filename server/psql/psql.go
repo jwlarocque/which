@@ -43,6 +43,7 @@ func (store SessionStore) Fetch(sessionID string) (which.Session, error) {
 	return session, nil
 }
 
+// TODO: store and fetch Rounds
 type QuestionStore struct {
 	DB          *sqlx.DB
 	OptionStore which.OptionStore
@@ -190,7 +191,7 @@ func (store BallotStore) Update(ballot which.Ballot) (int, error) {
 
 func (store BallotStore) Fetch(questionID string, userID string) (which.Ballot, error) {
 	ballot := which.Ballot{}
-	err := store.DB.Select(&ballot, "SELECT ballot_id, question_id, user_id FROM ballots WHERE question_id=$1 AND user_id=$2", questionID, userID)
+	err := store.DB.Get(&ballot, "SELECT ballot_id, question_id, user_id FROM ballots WHERE question_id=$1 AND user_id=$2", questionID, userID)
 	if err != nil {
 		return ballot, fmt.Errorf("failed to fetch ballot for question ID: %s, user ID: %s, error: %v", questionID, userID, err)
 	}
@@ -238,4 +239,18 @@ func (store VoteStore) FetchAll(ballotID int) ([]*which.Vote, error) {
 		return votes, fmt.Errorf("failed to fetch votes for ballot ID: %d, error: %v", ballotID, err)
 	}
 	return votes, nil
+}
+
+type ResultStore struct {
+	DB *sqlx.DB
+}
+
+// TODO: bulk insert
+func (store ResultStore) Update(result which.Result) error {
+	_, err := store.DB.NamedExec(
+		`INSERT INTO results 
+			VALUES(:question_id, :round_num, :option_id, :num_votes) 
+		ON CONFLICT ON CONSTRAINT results_pkey 
+			DO UPDATE SET num_votes=EXCLUDED.num_votes`, result)
+	return err
 }

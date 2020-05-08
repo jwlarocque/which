@@ -65,7 +65,7 @@ type Question struct {
 	Name    string    `json:"name" db:"name"`
 	Type    QType     `json:"type" db:"type"`
 	Options []*Option `json:"options" db:"-"`
-	Rounds  []*Round
+	Results []*Result `json:"results" db:"-"`
 }
 
 // QuestionStore is implemented by structs which provide a way to retrieve and update Questions in a database
@@ -101,6 +101,7 @@ type Ballot struct {
 // BallotStore is implemented by structs which provide a way to retrieve and update Ballots in a database
 type BallotStore interface {
 	Update(Ballot) (int, error)
+	Fetch(questionID string, userID string) (Ballot, error)
 	FetchAll(questionID string) ([]*Ballot, error)
 	RemoveAll(questionID string) error
 }
@@ -118,18 +119,16 @@ type VoteStore interface {
 	FetchAll(ballotID int) ([]*Vote, error)
 }
 
-// Round is the results of an instant runoff/ranked voting round
-// (approval and plurality polls have exactly one round)
-type Round struct {
-	QuestionID string
-	RoundNum   int
-	Results    []*Result
-}
-
 // Result has the number of votes an option OptionID has during round RoundNum
 type Result struct {
-	QuestionID string
-	RoundNum   int
-	OptionID   int
-	NumVotes   int
+	QuestionID string `json:"-" db:"question_id"`
+	RoundNum   int    `json:"-" db:"round_num"`
+	// TODO: can I make this a foreign key even though options has primary key (option_id, question_id)?
+	OptionID int `json:"option_id" db:"option_id"`
+	NumVotes int `json:"num_votes" db:"num_votes"`
+}
+
+// ResultStore is implemented by structs which provide a way to retrieve and update Results in a database
+type ResultStore interface {
+	Update(Result) error
 }
