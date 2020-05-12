@@ -4,4 +4,4 @@ export WHICH_GOOGLE_CLIENT_ID="<your google oauth client ID>"
 export WHICH_GOOGLE_CLIENT_SECRET="<your google oauth client secret>"
 export WHICH_GOOGLE_CALLBACK_URL="<your host>/auth/callback" # needs to be allowed in the Google Oauth Console
 cd /home/username/which # absolute path to the top which directory
-./which
+./which_server

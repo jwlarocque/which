@@ -18,9 +18,9 @@ Current code quality: gradually improving
 1. If necessary, allow execution: 
     `chmod u+x start.sh`
 1. Build the server executable: 
-    `go build -o which_server server`
+    `go build -o which_server server/main.go`
 1. Give `which_server` permission to bind reserved ports: 
-    `sudo setcap 'cap_net_bind_service=+ep' which`
+    `sudo setcap 'cap_net_bind_service=+ep' which_server`
 
 Run as daemon:
 1. Edit `which_server.service.sample` with the appropriate paths and rename it `which_server.service`
