@@ -33,7 +33,7 @@ func NewAuth(userStore which.UserStore, sessionStore which.SessionStore) *Auth {
 	auth := &Auth{}
 
 	auth.config = &oauth2.Config{ // TODO: read from config
-		RedirectURL:  "http://localhost:8080/auth/callback",
+		RedirectURL:  os.Getenv("WHICH_GOOGLE_CALLBACK_URL"),
 		ClientID:     os.Getenv("WHICH_GOOGLE_CLIENT_ID"),
 		ClientSecret: os.Getenv("WHICH_GOOGLE_CLIENT_SECRET"),
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},

@@ -324,6 +324,7 @@ type GetBallots struct {
 	ballotStore which.BallotStore
 }
 
+// TODO: switch to sending results instead of all votes
 func (handler *GetBallots) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	_, tail := shiftPath(req.URL.Path)
 	questionID := tail[1:]

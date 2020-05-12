@@ -36,5 +36,9 @@ func main() {
 
 	rh := handlers.NewRoot(userStore, sessionStore, questionStore, ballotStore, resultStore)
 
-	handlers.ListenAndServe(":8080", rh)
+	log.Println("serving!")
+	err = handlers.ListenAndServe(":80", rh)
+	if err != nil {
+		log.Fatalf("Error returned by ListenAndServe: %v\n", err)
+	}
 }

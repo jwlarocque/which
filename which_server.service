@@ -1,0 +1,6 @@
+[Unit]
+Description=Which server service
+After=systemd-user-sessions.service
+[Service]
+Type=simple
+ExecStart=/home/jwlarocque/Documents/which/start.sh
