@@ -1,6 +1,8 @@
 # Which?
 
-The beginnings of a simple voting/polling web app.  Svelte frontend, Go backend, PostgreSQL database.  
+[which.jwlarocque.com](http://which.jwlarocque.com/)
+
+The beginnings of a simple voting/polling web app.  Svelte frontend, Go backend, PostgreSQL database.  Ranked Choice and Plurality voting not yet implemented.
 
 Current code quality: gradually improving
 
@@ -19,7 +21,7 @@ Current code quality: gradually improving
     `chmod u+x start.sh`
 1. Build the server executable: 
     `go build -o which_server server/main.go`
-1. Give `which_server` permission to bind reserved ports: 
+1. If not running it as sudo, give `which_server` permission to bind reserved ports: 
     `sudo setcap 'cap_net_bind_service=+ep' which_server`
 
 Run as daemon:
@@ -27,13 +29,9 @@ Run as daemon:
 1. Move the systemd service file: 
     `sudo cp which_server.service /etc/systemd/system`
 1. Start the service 
-    `systemctl start which_server.service`
+    (`sudo`) `systemctl start which_server.service`
 
-Or just run `./start.sh`
-
-### Global notes to self
-
-* add a subtitle/place for question authors to add more information
+Or just run (`sudo`) `./start.sh`
 
 ### References
 
