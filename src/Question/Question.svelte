@@ -7,12 +7,12 @@
     let q = {};
     let optionCounts = [];
     let votes;
-    let ballots;
+    let results;
 
     let newVoteFormVisible = false;
 
     getQuestion(id);
-    getBallots(id);
+    getResults(id);
 
     // TODO: also retrieve user's current votes and fill them in
     async function getQuestion(question_id) {
@@ -30,35 +30,15 @@
 		}
     }
 
-    async function getBallots(question_id) {
-        const res = await fetch("qs/vs/" + question_id);
+    async function getResults(question_id) {
+        const res = await fetch("qs/rs/" + question_id);
 		const data = await res.json();
 
 		if (res.ok) {
-            ballots = data;
-            updateResults(ballots);
+            results = data;
 		} else {
 			throw new Error(data);
 		}
-    }
-
-    function updateResults(ballots) {
-        console.log(ballots);
-        optionCounts = ballots.reduce(combineReducer, []).reduce(countReducer, []);
-        console.log(optionCounts)
-    }
-
-    function combineReducer(vs, ballot) {
-        return vs.concat(ballot.votes);
-    }
-    
-    function countReducer(counts, vote) {
-        if (counts[vote.option_id]) {
-            counts[vote.option_id] += vote.state;
-        } else {
-            counts[vote.option_id] = vote.state;
-        }
-        return counts;
     }
 
     function voteStringFromState() {
@@ -69,7 +49,6 @@
             {"question_id": id, 
              "votes": votes.map( function(vote, index) { 
                  return {"option_id": index, "state": (vote === true ? 1 : (vote === false ? 0 : vote))}})})
-        console.log(ret)
         return ret
     }
 
@@ -80,12 +59,10 @@
             headers: {"Content-Type": "application/json",},
             body: voteStringFromState(),
         });
-        const data = await res.json();
 
         if (res.ok) {
             newVoteFormVisible = true;
-            console.log(res) // TODO: remove debug
-            // TODO: display/update vote results
+            getResults(id);
         } else {
             newVoteFormVisible = true;
             throw new Error(data.message); // TODO: improve and replicate this error pattern
@@ -151,10 +128,10 @@
 <div id="results">
     <div>
         <h3>Results</h3>
-        <button class="button" on:click={getBallots(id)}>Refresh</button>
+        <button class="button" on:click={getResults(id)}>Refresh</button>
     </div>
     {#if q.type == 0}
-        <ApprovalResults {q} {optionCounts}/>
+        <ApprovalResults {q} {results}/>
     {:else if q.type == 1}
         <p>runoff</p>
     {:else if q.type == 2}

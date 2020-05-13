@@ -1,11 +1,10 @@
 <script>
-    export let optionCounts;
+    export let results = [];
     export let q;
 
     let maxVotes = 0;
 
-    $: sortedOptions = q.options.concat().sort((a, b) => optionCounts[b.option_id] - optionCounts[a.option_id]);
-    $: data = sortedOptions.map((option, i) => ({text: option.text, votes: optionCounts[option.option_id]}));
+    $: data = results.map((result, i) => ({text: q.options[result.option_id].text, votes: result.num_votes}))
     $: maxVotes = data.reduce((r, e) => (Math.max(r, e.votes)), 0);
 </script>
 
@@ -39,11 +38,11 @@
     }
 </style>
 
-{#if optionCounts.length && q}
+{#if data && data.length && q}
     <div class="barChart">
         {#each data as datum, i}
             <p style={"grid-row: " + (i + 1).toString() + ";"} title={datum.text}>{datum.text}</p>
-            <div class="indicator" style={"grid-row: " + (i + 1).toString() + "; width: " + (100 * datum.votes / maxVotes) + "%;"}>
+            <div class="indicator" style={"grid-row: " + (i + 1).toString() + "; width: " + (100 * datum.votes / maxVotes) + "%;" + (datum.votes == maxVotes ? " background-color: #ee4035;" : "")}>
                 <p>{datum.votes}</p>
             </div>
         {/each}

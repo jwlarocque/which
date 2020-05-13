@@ -20,7 +20,7 @@ type Qs struct {
 	GetQuestionHandler    *GetQuestion
 	DeleteQuestionHandler *DeleteQuestion
 	NewVoteHandler        *NewVote
-	GetBallotsHandler     *GetBallots
+	GetResultsHandler     *GetResults
 }
 
 func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore, resultStore which.ResultStore) *Qs {
@@ -52,8 +52,8 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, b
 		questionStore: questionStore,
 	}
 
-	qs.GetBallotsHandler = &GetBallots{
-		ballotStore: ballotStore,
+	qs.GetResultsHandler = &GetResults{
+		resultStore: resultStore,
 	}
 
 	return qs
@@ -74,9 +74,9 @@ func (handler *Qs) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		handler.GetQuestionHandler.ServeHTTP(resp, req)
 	} else if head == "del" {
 		handler.DeleteQuestionHandler.ServeHTTP(resp, req)
-	} else if head == "vs" {
+	} else if head == "rs" {
 		// handle send votes
-		handler.GetBallotsHandler.ServeHTTP(resp, req)
+		handler.GetResultsHandler.ServeHTTP(resp, req)
 	} else {
 		http.Error(resp, "qs endpoint does not exist", http.StatusNotFound)
 	}
@@ -318,24 +318,23 @@ func (handler *NewVote) recomputeVotes(question which.Question) error {
 	return nil
 }
 
-// == GetVotes handler ================================
+// == GetResults handler ================================
 
-type GetBallots struct {
-	ballotStore which.BallotStore
+type GetResults struct {
+	resultStore which.ResultStore
 }
 
-// TODO: switch to sending results instead of all votes
-func (handler *GetBallots) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (handler *GetResults) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	_, tail := shiftPath(req.URL.Path)
 	questionID := tail[1:]
-	ballots, err := handler.ballotStore.FetchAll(questionID)
+	results, err := handler.resultStore.FetchAll(questionID)
 	if err != nil {
-		log.Printf("failed to fetch ballots: %v\n", err)
-		http.Error(resp, "failed to fetch ballots", http.StatusInternalServerError)
+		log.Printf("failed to fetch results: %v\n", err)
+		http.Error(resp, "failed to fetch results", http.StatusInternalServerError)
 		return
 	}
-	if err = json.NewEncoder(resp).Encode(ballots); err != nil {
-		log.Printf("failed to encode ballots as JSON: %v\n", err)
-		http.Error(resp, "failed to encode ballots as JSON", http.StatusInternalServerError)
+	if err = json.NewEncoder(resp).Encode(results); err != nil {
+		log.Printf("failed to encode results as JSON: %v\n", err)
+		http.Error(resp, "failed to encode results as JSON", http.StatusInternalServerError)
 	}
 }

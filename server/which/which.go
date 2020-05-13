@@ -122,7 +122,7 @@ type VoteStore interface {
 // Result has the number of votes an option OptionID has during round RoundNum
 type Result struct {
 	QuestionID string `json:"-" db:"question_id"`
-	RoundNum   int    `json:"-" db:"round_num"`
+	RoundNum   int    `json:"round_num" db:"round_num"`
 	// TODO: can I make this a foreign key even though options has primary key (option_id, question_id)?
 	OptionID int `json:"option_id" db:"option_id"`
 	NumVotes int `json:"num_votes" db:"num_votes"`
@@ -131,4 +131,5 @@ type Result struct {
 // ResultStore is implemented by structs which provide a way to retrieve and update Results in a database
 type ResultStore interface {
 	Update(Result) error
+	FetchAll(questionID string) ([]*Result, error)
 }

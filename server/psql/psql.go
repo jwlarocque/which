@@ -254,3 +254,12 @@ func (store ResultStore) Update(result which.Result) error {
 			DO UPDATE SET num_votes=EXCLUDED.num_votes`, result)
 	return err
 }
+
+func (store ResultStore) FetchAll(questionID string) ([]*which.Result, error) {
+	results := []*which.Result{}
+	err := store.DB.Select(&results, "SELECT question_id, round_num, option_id, num_votes FROM results WHERE question_id=$1", questionID)
+	if err != nil {
+		return results, fmt.Errorf("failed to fetch results for question ID: %s, error: %v", questionID, err)
+	}
+	return results, nil
+}
