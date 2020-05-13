@@ -2,8 +2,6 @@
     import {scale} from 'svelte/transition';
     export let q;
     export let votes;
-
-    votes.fill(false);
 </script>
 
 <style>

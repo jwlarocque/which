@@ -21,6 +21,7 @@ type Qs struct {
 	DeleteQuestionHandler *DeleteQuestion
 	NewVoteHandler        *NewVote
 	GetResultsHandler     *GetResults
+	GetBallotHandler      *GetBallot
 }
 
 func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, ballotStore which.BallotStore, resultStore which.ResultStore) *Qs {
@@ -56,6 +57,11 @@ func NewQs(sessionStore which.SessionStore, questionStore which.QuestionStore, b
 		resultStore: resultStore,
 	}
 
+	qs.GetBallotHandler = &GetBallot{
+		sessionStore: sessionStore,
+		ballotStore:  ballotStore,
+	}
+
 	return qs
 }
 
@@ -77,6 +83,8 @@ func (handler *Qs) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	} else if head == "rs" {
 		// handle send votes
 		handler.GetResultsHandler.ServeHTTP(resp, req)
+	} else if head == "b" {
+		handler.GetBallotHandler.ServeHTTP(resp, req)
 	} else {
 		http.Error(resp, "qs endpoint does not exist", http.StatusNotFound)
 	}
@@ -257,7 +265,7 @@ func ballotValid(ballot which.Ballot, qType which.QType) bool {
 	switch qType {
 	case which.QTypeApproval:
 		for _, vote := range ballot.Votes {
-			if vote.State > 1 {
+			if vote != nil && vote.State > 1 {
 				return false
 			}
 		}
@@ -336,5 +344,32 @@ func (handler *GetResults) ServeHTTP(resp http.ResponseWriter, req *http.Request
 	if err = json.NewEncoder(resp).Encode(results); err != nil {
 		log.Printf("failed to encode results as JSON: %v\n", err)
 		http.Error(resp, "failed to encode results as JSON", http.StatusInternalServerError)
+	}
+}
+
+// == GetBallot handler ================================
+
+type GetBallot struct {
+	sessionStore which.SessionStore
+	ballotStore  which.BallotStore
+}
+
+func (handler *GetBallot) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	_, tail := shiftPath(req.URL.Path)
+	questionID := tail[1:]
+	session, err := sessionFromRequest(req, handler.sessionStore)
+	if err != nil {
+		http.Error(resp, "not authorized to retrieve a ballot", http.StatusUnauthorized)
+		return
+	}
+	ballot, err := handler.ballotStore.Fetch(questionID, session.UserID)
+	if err != nil {
+		log.Printf("failed to fetch ballot: %v\n", err)
+		http.Error(resp, "failed to fetch ballot", http.StatusInternalServerError)
+		return
+	}
+	if err = json.NewEncoder(resp).Encode(ballot); err != nil {
+		log.Printf("failed to encode ballot as JSON: %v\n", err)
+		http.Error(resp, "failed to encode ballot as JSON", http.StatusInternalServerError)
 	}
 }

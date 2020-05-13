@@ -6,13 +6,14 @@
 
     let q = {};
     let optionCounts = [];
-    let votes;
+    let votes = [];
     let results;
 
     let newVoteFormVisible = false;
 
     getQuestion(id);
     getResults(id);
+    getBallot(id);
 
     // TODO: also retrieve user's current votes and fill them in
     async function getQuestion(question_id) {
@@ -28,6 +29,19 @@
 		} else {
 			throw new Error(data);
 		}
+    }
+
+    // get the user's ballot, if one exists
+    async function getBallot(question_id) {
+        const res = await fetch("qs/b/" + question_id);
+        const data = await res.json();
+
+        if (res.ok) {
+            // compute votes from response data
+            console.log(data);
+            data.votes.forEach(datum => (votes[datum.option_id] = datum.state));
+        }
+        // else assume no ballot existed and do nothing
     }
 
     async function getResults(question_id) {

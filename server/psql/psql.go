@@ -178,10 +178,12 @@ func (store BallotStore) Update(ballot which.Ballot) (int, error) {
 	}
 	if ballotID > 0 {
 		for _, vote := range ballot.Votes {
-			vote.BallotID = ballotID
-			err = store.VoteStore.Update(*vote)
-			if err != nil {
-				return -1, fmt.Errorf("incomplete votes insert: %v", err)
+			if vote != nil {
+				vote.BallotID = ballotID
+				err = store.VoteStore.Update(*vote)
+				if err != nil {
+					return -1, fmt.Errorf("incomplete votes insert: %v", err)
+				}
 			}
 		}
 		return ballotID, nil
