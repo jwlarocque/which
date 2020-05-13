@@ -15,6 +15,8 @@ Current code quality: gradually improving
     `git clone https://github.com/jwlarocque/which.git`
 1. Change to which directory: 
     `cd which`
+1. Build the frontend:
+    `npm run build`
 1. Create a PostgreSQL DB from `schema.sql` (you might want to change the owner username)
 1. Edit `start.sh.sample` with the appropriate paths and variables and rename it `start.sh`.
 1. If necessary, allow execution: 

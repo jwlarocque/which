@@ -37,7 +37,7 @@ func main() {
 	rh := handlers.NewRoot(userStore, sessionStore, questionStore, ballotStore, resultStore)
 
 	log.Println("serving!")
-	err = handlers.ListenAndServe(":80", rh)
+	err = handlers.ListenAndServe(os.Getenv("WHICH_PORT"), rh)
 	if err != nil {
 		log.Fatalf("Error returned by ListenAndServe: %v\n", err)
 	}
