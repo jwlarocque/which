@@ -364,8 +364,8 @@ func (handler *GetBallot) ServeHTTP(resp http.ResponseWriter, req *http.Request)
 	}
 	ballot, err := handler.ballotStore.Fetch(questionID, session.UserID)
 	if err != nil {
-		log.Printf("failed to fetch ballot: %v\n", err)
-		http.Error(resp, "failed to fetch ballot", http.StatusInternalServerError)
+		//log.Printf("failed to fetch ballot: %v\n", err)
+		//http.Error(resp, "failed to fetch ballot", http.StatusNotFound)
 		return
 	}
 	if err = json.NewEncoder(resp).Encode(ballot); err != nil {

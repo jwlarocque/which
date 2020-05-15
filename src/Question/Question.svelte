@@ -1,6 +1,7 @@
 <script>
-    import ApprovalQuestion from "./ApprovalQuestion.svelte"
+    import ApprovalQuestion, {approvalVotesFromBallot} from "./ApprovalQuestion.svelte"
     import ApprovalResults from "./ApprovalResults.svelte"
+    import RankedQuestion, {rankedVotesFromBallot} from "./RankedQuestion.svelte"
 
     export let id;
 
@@ -13,7 +14,6 @@
 
     getQuestion(id);
     getResults(id);
-    getBallot(id);
 
     // TODO: also retrieve user's current votes and fill them in
     async function getQuestion(question_id) {
@@ -21,11 +21,8 @@
 		const data = await res.json();
 
 		if (res.ok) {
-            // set votes first to avoid .fill race condition
-            votes = Array(data.options.length);
             q = data;
-            newVoteFormVisible = true;
-            console.log(q);
+            getBallot(id);
 		} else {
 			throw new Error(data);
 		}
@@ -33,15 +30,25 @@
 
     // get the user's ballot, if one exists
     async function getBallot(question_id) {
+        var ballot;
         const res = await fetch("qs/b/" + question_id);
-        const data = await res.json();
 
         if (res.ok) {
-            // compute votes from response data
-            console.log(data);
-            data.votes.forEach(datum => (votes[datum.option_id] = datum.state));
+            ballot = await res.json()
+        } else {
+            // if bad/no response, we can just make the user
+            // fill in the form from scratch
+            ballot = {"votes": []};
         }
-        // else assume no ballot existed and do nothing
+
+        if (q.type == 0) {
+            votes = approvalVotesFromBallot(q, ballot);
+        } else if (q.type == 1) {
+            votes = rankedVotesFromBallot(q, ballot);
+        } else {
+            votes = [];
+        }
+        newVoteFormVisible = true;
     }
 
     async function getResults(question_id) {
@@ -125,7 +132,7 @@
             {#if q.type == 0} <!-- TODO: question type enum -->
                 <ApprovalQuestion {q} {votes}/>
             {:else if q.type == 1}
-                <p>runoff</p>
+                 <RankedQuestion {q} {votes}/>
             {:else if q.type == 2}
                 <p>plurality</p>
             {:else}

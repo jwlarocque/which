@@ -23,7 +23,7 @@ Current code quality: gradually improving
     `chmod u+x start.sh`
 1. Build the server executable: 
     `go build -o which_server server/main.go`
-1. If not running it as sudo, give `which_server` permission to bind reserved ports: 
+1. If not running it with sudo, give `which_server` permission to bind reserved ports: 
     `sudo setcap 'cap_net_bind_service=+ep' which_server`
 
 Run as daemon:

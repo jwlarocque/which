@@ -4,6 +4,14 @@
     export let votes;
 </script>
 
+<script context="module">
+    export function approvalVotesFromBallot(q, ballot) {
+        var vs = new Array(q.options.length);
+        ballot.votes.forEach(vote => (vs[vote.option_id] = vote.state));
+        return vs
+    }
+</script>
+
 <style>
     label {
         position: relative;

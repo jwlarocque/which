@@ -72,7 +72,7 @@
 
 	.questionRow {
 		display: grid;
-		grid-template-columns: 3fr 1fr 1fr 1fr;
+		grid-template-columns: 3fr 1fr 1fr;
 		grid-column-gap: 0.4em;
 	}
 
@@ -118,7 +118,6 @@
 		<div id="questionsList">
 			<div class="questionRow">
 				<h3>Your Questions</h3>
-				<h4 class="center">Votes</h4>
 				<h4 class="center">Link</h4>
 				<h4 class="center">Delete</h4>
 			</div>
@@ -127,7 +126,6 @@
 					{#if i > 0}<hr transition:fade/>{:else}<div class="across"></div>{/if}
 					<div class="questionRow" transition:fade>
 						<p class="question"><a href={"/?q=" + q.question_id}>{q.name}</a></p>
-						<p class="center">0<!-- TODO: actually deliver vote counts with question --></p>
 						<div class="icon">
 							<img class="center" src="images/done.svg" alt="copied"/>
 							<img class="center" src="images/copy.svg" alt="copy to clipboard" title="copy to clipboard" on:click={copyToClipboard(window.location.host + "/?q=" + q.question_id, this)}/>
