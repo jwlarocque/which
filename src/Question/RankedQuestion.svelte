@@ -1,23 +1,19 @@
 <script>
     import {onMount} from 'svelte';
     import {scale} from 'svelte/transition';
+
+    import DragDropList from 'svelte-dragdroplist';
+
     export let q;
     export let votes;
 
-    $: q.options.sort((a, b) => (votes[a.option_id] - votes[b.option_id]))
+    $: votes = votesFromOpts(q.options);
 
-    function upRank(option) {
-        if (votes[option.option_id] > 1) {
-            votes[option.option_id]--;
-        }
+    function votesFromOpts(opts) {
+        let vs = new Array();
+        opts.forEach((opt, i) => (vs[opt.option_id] = opts.length - i));
+        return vs;
     }
-
-    function downRank(option) {
-        if (votes[option.option_id] < votes.length - 1) {
-            votes[option.option_id]++;
-        }
-    }
-
 </script>
 
 <script context="module">
@@ -31,47 +27,19 @@
 </script>
 
 <style>
-    .dragList {
-        position: relative;    
-    }
-
-    .dragList > div {
-        position: relative;
-        display: flex;
-        align-items: center;
+    :global(.dragdroplist .item) {
+        color: #242020;
     }
 
     label > * {
         margin-right: 1em;
-    }
-
-    .grabbed {
-        /*opacity: 0.0;*/
-        background-color: blue !important;
-    }
-
-    #ghost {
-        position: absolute;
-        background-color: red;
-        left: -50px;
     }
 </style>
 
 {#if q.name}
     <!-- TODO: better explainer -->
     <p>Rank the options from most preferred to least preferred.</p>
-    <div class="dragList">
-        <div id="ghost"></div>
-        {#each q.options as option, i}
-            <div 
-            id={"item" + option.option_id}>
-                <!--{#if i != 0} <button on:click={upRank(option)}>^</button> {/if}-->
-                <p>{votes[option.option_id]}</p>
-                <!--{#if i != q.options.length - 1} <button on:click={downRank(option)}>v</button> {/if}-->
-                <p>{option.text}</p>
-            </div>
-        {/each}
-    </div>
+    <DragDropList bind:data={q.options}/>
 {:else}
     <p>Loading...</p>
 {/if}

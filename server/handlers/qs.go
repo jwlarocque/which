@@ -269,6 +269,17 @@ func ballotValid(ballot which.Ballot, qType which.QType) bool {
 				return false
 			}
 		}
+	case which.QTypeRunoff:
+		seen := make(map[int]bool)
+		for _, vote := range ballot.Votes {
+			if vote.State < 1 || vote.State > len(ballot.Votes) {
+				return false
+			}
+			if seen[vote.State] {
+				return false
+			}
+			seen[vote.State] = true
+		}
 	default:
 		return false
 	}

@@ -132,7 +132,7 @@
             {#if q.type == 0} <!-- TODO: question type enum -->
                 <ApprovalQuestion {q} {votes}/>
             {:else if q.type == 1}
-                 <RankedQuestion {q} {votes}/>
+                 <RankedQuestion bind:q={q} bind:votes={votes}/>
             {:else if q.type == 2}
                 <p>plurality</p>
             {:else}

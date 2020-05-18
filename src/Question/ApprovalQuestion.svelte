@@ -7,7 +7,9 @@
 <script context="module">
     export function approvalVotesFromBallot(q, ballot) {
         var vs = new Array(q.options.length);
-        ballot.votes.forEach(vote => (vs[vote.option_id] = vote.state));
+        if (ballot && ballot.votes && ballot.votes.length) {
+            ballot.votes.forEach(vote => (vs[vote.option_id] = vote.state));
+        }
         return vs
     }
 </script>
