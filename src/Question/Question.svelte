@@ -2,6 +2,7 @@
     import ApprovalQuestion, {approvalVotesFromBallot} from "./ApprovalQuestion.svelte"
     import ApprovalResults from "./ApprovalResults.svelte"
     import RankedQuestion, {rankedVotesFromBallot} from "./RankedQuestion.svelte"
+    import RankedResults from "./RankedResults.svelte"
 
     export let id;
 
@@ -154,7 +155,7 @@
     {#if q.type == 0}
         <ApprovalResults {q} {results}/>
     {:else if q.type == 1}
-        <p>runoff</p>
+        <RankedResults {q} {results}/>
     {:else if q.type == 2}
         <p>plurality</p>
     {:else}

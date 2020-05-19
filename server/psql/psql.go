@@ -265,3 +265,8 @@ func (store ResultStore) FetchAll(questionID string) ([]*which.Result, error) {
 	}
 	return results, nil
 }
+
+func (store ResultStore) RemoveAll(questionID string) error {
+	_, err := store.DB.Exec("DELETE FROM results WHERE question_id=$1", questionID)
+	return err
+}

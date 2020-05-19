@@ -132,4 +132,5 @@ type Result struct {
 type ResultStore interface {
 	Update(Result) error
 	FetchAll(questionID string) ([]*Result, error)
+	RemoveAll(questionID string) error
 }

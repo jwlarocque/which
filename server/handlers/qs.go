@@ -319,6 +319,10 @@ func (handler *NewVote) recomputeVotes(question which.Question) error {
 		}
 	} else if question.Type == which.QTypeRunoff {
 		results := handler.recomputeRunoffVotes(question, ballots)
+		err = handler.resultStore.RemoveAll(question.ID)
+		if err != nil {
+			return fmt.Errorf("failed to remove previous results: %v", err)
+		}
 		for _, result := range results {
 			err = handler.resultStore.Update(*result)
 			if err != nil {
@@ -410,13 +414,15 @@ func (handler *NewVote) recomputeRunoffVotes(question which.Question, ballots []
 				worstOptID = optID
 			}
 
-			// append the option's votes to results for this round
-			results = append(results, &which.Result{
-				QuestionID: question.ID,
-				RoundNum:   round,
-				OptionID:   optID,
-				NumVotes:   votes,
-			})
+			if votes > 0 {
+				// append the option's votes to results for this round
+				results = append(results, &which.Result{
+					QuestionID: question.ID,
+					RoundNum:   round,
+					OptionID:   optID,
+					NumVotes:   votes,
+				})
+			}
 		}
 
 		if worstOptID < 0 {
