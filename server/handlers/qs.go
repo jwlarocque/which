@@ -280,6 +280,7 @@ func ballotValid(ballot which.Ballot, qType which.QType) bool {
 			}
 			seen[vote.State] = true
 		}
+		// TODO: FIXME: runoff ballots must have a vote for every option
 	default:
 		return false
 	}
@@ -307,23 +308,17 @@ func (handler *NewVote) recomputeVotes(question which.Question) error {
 		return fmt.Errorf("failed to retrieve all ballots: %v", err)
 	}
 	if question.Type == which.QTypeApproval {
-		results := make(map[int]*which.Result)
-		for _, ballot := range ballots {
-			for _, vote := range ballot.Votes {
-				_, exists := results[vote.OptionID]
-				if !exists {
-					results[vote.OptionID] = &which.Result{
-						QuestionID: question.ID,
-						RoundNum:   0,
-						OptionID:   vote.OptionID,
-						NumVotes:   0,
-					}
-				}
-				if vote.State > 0 {
-					results[vote.OptionID].NumVotes++
-				}
+		// TODO: recomputeApprovalVotes should return []*which.Result instead of map
+		//       then combine repeated db write code
+		results := handler.recomputeApprovalVotes(question, ballots)
+		for _, result := range results {
+			err = handler.resultStore.Update(*result)
+			if err != nil {
+				return fmt.Errorf("failed to store computed results: %v", err)
 			}
 		}
+	} else if question.Type == which.QTypeRunoff {
+		results := handler.recomputeRunoffVotes(question, ballots)
 		for _, result := range results {
 			err = handler.resultStore.Update(*result)
 			if err != nil {
@@ -331,10 +326,108 @@ func (handler *NewVote) recomputeVotes(question which.Question) error {
 			}
 		}
 	} else {
-		// TODO: implement recompute for other question types
+		// TODO: implement recompute for plurality question type
 		return fmt.Errorf("question type %v not yet implemented", question.Type)
 	}
 	return nil
+}
+
+func (handler *NewVote) recomputeApprovalVotes(question which.Question, ballots []*which.Ballot) map[int]*which.Result {
+	results := make(map[int]*which.Result)
+	for _, ballot := range ballots {
+		for _, vote := range ballot.Votes {
+			_, exists := results[vote.OptionID]
+			if !exists {
+				results[vote.OptionID] = &which.Result{
+					QuestionID: question.ID,
+					RoundNum:   0,
+					OptionID:   vote.OptionID,
+					NumVotes:   0,
+				}
+			}
+			if vote.State > 0 {
+				results[vote.OptionID].NumVotes++
+			}
+		}
+	}
+	return results
+}
+
+// TODO: this function is enormous, break it down
+// TODO: this function is quite expensive, and runs every time someone votes (the preceding DB
+//       reads are expensive too).  Can something be done about this?
+func (handler *NewVote) recomputeRunoffVotes(question which.Question, ballots []*which.Ballot) []*which.Result {
+	var results []*which.Result
+
+	curVotes := make(map[int]int)
+	eliminated := make(map[int]bool)
+
+	var bestCount, worstCount int
+	var worstOptID int
+
+	round := 0
+	// eliminate options until one has a majority
+	for bestCount < len(ballots)/2+1 {
+		if round > 10 {
+			log.Fatalln("uh oh, infinite loop")
+		}
+
+		curVotes = make(map[int]int)
+		for _, opt := range question.Options {
+			if !eliminated[opt.ID] {
+				curVotes[opt.ID] = 0
+			}
+		}
+
+		// count the top ranked non-eliminated vote on each ballot
+		// into curVotes
+		for _, ballot := range ballots {
+			topOptID := 0
+			highest := -1
+			for _, vote := range ballot.Votes {
+				if !eliminated[vote.OptionID] && vote.State > highest {
+					highest = vote.State
+					topOptID = vote.OptionID
+				}
+			}
+			curVotes[topOptID]++
+		}
+
+		bestCount = -1
+		worstCount = -1
+		worstOptID = -1
+		// find the options with the most and least votes in this round
+		for optID, votes := range curVotes {
+			// fill best and worst counts with the first votes
+			if bestCount == -1 {
+				bestCount = votes
+				worstCount = votes
+				worstOptID = optID
+			} else if votes > bestCount {
+				bestCount = votes
+			} else if votes < worstCount {
+				worstCount = votes
+				worstOptID = optID
+			}
+
+			// append the option's votes to results for this round
+			results = append(results, &which.Result{
+				QuestionID: question.ID,
+				RoundNum:   round,
+				OptionID:   optID,
+				NumVotes:   votes,
+			})
+		}
+
+		if worstOptID < 0 {
+			log.Fatalln("uh oh, eliminated nothing and didn't reach a majority") // TODO: actually handle/consider case
+		} else {
+			eliminated[worstOptID] = true
+		}
+
+		round++
+	}
+	return results
 }
 
 // == GetResults handler ================================
