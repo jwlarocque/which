@@ -281,6 +281,16 @@ func ballotValid(ballot which.Ballot, qType which.QType) bool {
 			seen[vote.State] = true
 		}
 		// TODO: FIXME: runoff ballots must have a vote for every option
+	case which.QTypePlurality:
+		any := false
+		for _, vote := range ballot.Votes {
+			if vote != nil && vote.State > 0 {
+				if any {
+					return false
+				}
+				any = true
+			}
+		}
 	default:
 		return false
 	}
@@ -288,7 +298,7 @@ func ballotValid(ballot which.Ballot, qType which.QType) bool {
 }
 
 func (handler *NewVote) countUpdateVotes(ballot which.Ballot, oldBallot which.Ballot, question which.Question) error {
-	if question.Type == which.QTypeApproval {
+	if question.Type == which.QTypeApproval || question.Type == which.QTypePlurality {
 		if oldBallot.ID < 0 {
 			// we failed to retrieve the old ballot earlier, assume one might
 			// have existed so recompute total from scratch
@@ -301,59 +311,59 @@ func (handler *NewVote) countUpdateVotes(ballot which.Ballot, oldBallot which.Ba
 	return handler.recomputeVotes(question)
 }
 
-// TODO: this function is quite complex, consider breaking it up
 func (handler *NewVote) recomputeVotes(question which.Question) error {
+	var results []*which.Result
 	ballots, err := handler.ballotStore.FetchAll(question.ID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve all ballots: %v", err)
 	}
-	if question.Type == which.QTypeApproval {
-		// TODO: recomputeApprovalVotes should return []*which.Result instead of map
-		//       then combine repeated db write code
-		results := handler.recomputeApprovalVotes(question, ballots)
-		for _, result := range results {
-			err = handler.resultStore.Update(*result)
-			if err != nil {
-				return fmt.Errorf("failed to store computed results: %v", err)
-			}
-		}
+	if question.Type == which.QTypeApproval || question.Type == which.QTypePlurality {
+		results = handler.recomputeSingleRoundVotes(question, ballots)
 	} else if question.Type == which.QTypeRunoff {
-		results := handler.recomputeRunoffVotes(question, ballots)
-		err = handler.resultStore.RemoveAll(question.ID)
-		if err != nil {
-			return fmt.Errorf("failed to remove previous results: %v", err)
-		}
-		for _, result := range results {
-			err = handler.resultStore.Update(*result)
-			if err != nil {
-				return fmt.Errorf("failed to store computed results: %v", err)
-			}
-		}
+		results = handler.recomputeRunoffVotes(question, ballots)
 	} else {
 		// TODO: implement recompute for plurality question type
 		return fmt.Errorf("question type %v not yet implemented", question.Type)
 	}
+
+	err = handler.resultStore.RemoveAll(question.ID)
+	if err != nil {
+		return fmt.Errorf("failed to remove previous results: %v", err)
+	}
+	for _, result := range results {
+		err = handler.resultStore.Update(*result)
+		if err != nil {
+			return fmt.Errorf("failed to store computed results: %v", err)
+		}
+	}
 	return nil
 }
 
-func (handler *NewVote) recomputeApprovalVotes(question which.Question, ballots []*which.Ballot) map[int]*which.Result {
-	results := make(map[int]*which.Result)
+func (handler *NewVote) recomputeSingleRoundVotes(question which.Question, ballots []*which.Ballot) []*which.Result {
+	var results []*which.Result
+	votes := make(map[int]int)
+
+	for _, opt := range question.Options {
+		votes[opt.ID] = 0
+	}
+
 	for _, ballot := range ballots {
 		for _, vote := range ballot.Votes {
-			_, exists := results[vote.OptionID]
-			if !exists {
-				results[vote.OptionID] = &which.Result{
-					QuestionID: question.ID,
-					RoundNum:   0,
-					OptionID:   vote.OptionID,
-					NumVotes:   0,
-				}
-			}
 			if vote.State > 0 {
-				results[vote.OptionID].NumVotes++
+				votes[vote.OptionID]++
 			}
 		}
 	}
+
+	for optID, voteCount := range votes {
+		results = append(results, &which.Result{
+			QuestionID: question.ID,
+			RoundNum:   0,
+			OptionID:   optID,
+			NumVotes:   voteCount,
+		})
+	}
+
 	return results
 }
 

@@ -1,0 +1,81 @@
+<script>
+    import {scale} from 'svelte/transition';
+    export let q;
+    export let votes;
+
+    let selectedOption = 0;
+    $: if (selectedOption || true) {votes = votes.fill(0); votes[selectedOption] = 1;}
+    $: console.log(votes)
+</script>
+
+<script context="module">
+    export function pluralityVotesFromBallot(q, ballot) {
+        var vs = new Array(q.options.length);
+        if (ballot && ballot.votes && ballot.votes.length) {
+            ballot.votes.forEach(vote => (vs[vote.option_id] = vote.state));
+        }
+        return vs
+    }
+</script>
+
+<style>
+    label {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    input[type="checkbox"] + span {
+        border: 1px solid #eef2f3;
+        border-radius: 3.2em;
+
+        /* this is what it takes to make css respect you */
+        height: 1.6em;
+        max-height: 1.6em;
+        min-height: 1.6em;
+        width: 1.6em;
+        max-width: 1.6em;
+        min-width: 1.6em;
+
+        margin: 0.6em;
+        display: inline-flex;
+        user-select: none;
+
+        transition: 0.1s ease-in-out;
+    }
+
+    input[type="checkbox"]:checked + span {
+        background-color: #eef2f3;
+    }
+
+    input[type="checkbox"] + span > img {
+        height: 1.4em;
+        margin: auto;
+        width: auto;
+        opacity: 0.0;
+        transition: 0.1s ease-in-out;
+    }
+
+    input[type="checkbox"]:checked + span > img {
+        opacity: 1.0;
+    }
+</style>
+
+{#if q.name}
+    <!-- TODO: better explainer -->
+    <p>Select all options you are okay with.</p>
+    {#each q.options as option}
+        <label class="clickable">
+            <input type="radio" bind:group={selectedOption} value={option.option_id}>
+            <span><img src="images/done.svg" alt="radio button"/></span>
+            {option.text}
+        </label>
+    {/each}
+{:else}
+    <p>Loading...</p>
+{/if}

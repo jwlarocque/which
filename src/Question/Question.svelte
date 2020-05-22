@@ -1,8 +1,9 @@
 <script>
     import ApprovalQuestion, {approvalVotesFromBallot} from "./ApprovalQuestion.svelte"
-    import ApprovalResults from "./ApprovalResults.svelte"
+    import SingleRoundResults from "./SingleRoundResults.svelte"
     import RankedQuestion, {rankedVotesFromBallot} from "./RankedQuestion.svelte"
     import RankedResults from "./RankedResults.svelte"
+    import PluralityQuestion, {pluralityVotesFromBallot} from "./PluralityQuestion.svelte"
 
     export let id;
 
@@ -31,11 +32,14 @@
 
     // get the user's ballot, if one exists
     async function getBallot(question_id) {
-        var ballot;
         const res = await fetch("qs/b/" + question_id);
-
+        let ballot;
         if (res.ok) {
-            ballot = await res.json()
+            try {
+                ballot = await res.json();
+            } catch {
+                ballot = {"votes": []};
+            }
         } else {
             // if bad/no response, we can just make the user
             // fill in the form from scratch
@@ -46,6 +50,8 @@
             votes = approvalVotesFromBallot(q, ballot);
         } else if (q.type == 1) {
             votes = rankedVotesFromBallot(q, ballot);
+        } else if (q.type == 2) {
+            votes = pluralityVotesFromBallot(q, ballot);
         } else {
             votes = [];
         }
@@ -133,9 +139,9 @@
             {#if q.type == 0} <!-- TODO: question type enum -->
                 <ApprovalQuestion {q} {votes}/>
             {:else if q.type == 1}
-                 <RankedQuestion bind:q={q} bind:votes={votes}/>
+                <RankedQuestion bind:q={q} bind:votes={votes}/>
             {:else if q.type == 2}
-                <p>plurality</p>
+                <PluralityQuestion {q} {votes}/>
             {:else}
                 <p>error</p>
             {/if}
@@ -153,11 +159,11 @@
         <button class="button" on:click={getResults(id)}>Refresh</button>
     </div>
     {#if q.type == 0}
-        <ApprovalResults {q} {results}/>
+        <SingleRoundResults {q} {results}/>
     {:else if q.type == 1}
         <RankedResults {q} {results}/>
     {:else if q.type == 2}
-        <p>plurality</p>
+         <SingleRoundResults {q} {results}/>
     {:else}
         <p>error</p>
     {/if}

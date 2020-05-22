@@ -13,5 +13,5 @@
     }, {"votes": -1});
 </script>
 
-<p>Runoff Winner: {q.options.filter(option => option.option_id == winner.option_id)[0].text}</p>
+<p>Runoff Winner: {(q && q.options && q.options.length) ? q.options.filter(option => option.option_id == winner.option_id)[0].text : "loading..."}</p>
 <p>(Visualization for these results is WIP)</p>
