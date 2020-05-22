@@ -1,8 +1,8 @@
 # Which?
 
-[which.jwlarocque.com](http://which.jwlarocque.com/)
+Live: [which.jwlarocque.com](http://which.jwlarocque.com/)
 
-The beginnings of a simple voting/polling web app.  Svelte frontend, Go backend, PostgreSQL database.  Ranked Choice and Plurality voting not yet implemented.
+A simple voting/polling web app, with support for instant runoff as well as approval and plurality voting.  Svelte frontend, Go backend, PostgreSQL database.
 
 Current code quality: gradually improving
 
@@ -35,6 +35,25 @@ Run as daemon:
 
 Or just run (`sudo`) `./start.sh`
 
+### TODO
+
+In Progress
+
+* Sankey diagrams for ranked choice/runoff results (currently just shows winner)
+* Link copy dropdown
+
+Planned
+
+* Question subtitles/additional information
+* List of questions voted on by user
+* Additional cleanup and documentation
+
+Potential
+
+* Config file (instead of treating start.sh as config via env vars)
+* HTTPS
+* Jenkins CI
+
 ### References
 
 [Golang package docs](https://golang.org/pkg)  
@@ -47,7 +66,8 @@ Or just run (`sudo`) `./start.sh`
 [Jon Calhoun, Securing cookies in Go](https://www.calhoun.io/securing-cookies-in-go/)  
 
 ##### Svelte
-[Svelte docs](https://svelte.dev/tutorial)  
+[Svelte docs](https://svelte.dev/docs)
+[Svelte tour](https://svelte.dev/tutorial)  
 
 ##### SQL
 [PostegreSQL docs](https://www.postgresql.org/docs/12)  
