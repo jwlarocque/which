@@ -11,7 +11,8 @@
     $: winner = results.filter(result => result.round_num == finalRound).reduce(function(a, b) {
         return a.votes > b.votes ? a : b;
     }, {"votes": -1});
+    $: winnerText = q.options.filter(option => option.option_id == winner.option_id)[0].text || "loading..."
 </script>
 
-<p>Runoff Winner: {(q && q.options && q.options.length) ? q.options.filter(option => option.option_id == winner.option_id)[0].text : "loading..."}</p>
+<p>Runoff Winner: {winnerText}</p>
 <p>(Visualization for these results is WIP)</p>

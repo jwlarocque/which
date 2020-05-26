@@ -1,7 +1,7 @@
 <script>
     import ApprovalQuestion, {approvalVotesFromBallot} from "./ApprovalQuestion.svelte"
     import SingleRoundResults from "./SingleRoundResults.svelte"
-    import RankedQuestion, {rankedVotesFromBallot} from "./RankedQuestion.svelte"
+    import RankedQuestion, {rankedVotesFromBallot, orderOptsByVote} from "./RankedQuestion.svelte"
     import RankedResults from "./RankedResults.svelte"
     import PluralityQuestion, {pluralityVotesFromBallot} from "./PluralityQuestion.svelte"
 
@@ -24,6 +24,7 @@
 
 		if (res.ok) {
             q = data;
+            q.sorted = false;
             getBallot(id);
 		} else {
 			throw new Error(data);
@@ -50,6 +51,8 @@
             votes = approvalVotesFromBallot(q, ballot);
         } else if (q.type == 1) {
             votes = rankedVotesFromBallot(q, ballot);
+            orderOptsByVote(q.options, votes);
+            q.sorted = true;
         } else if (q.type == 2) {
             votes = pluralityVotesFromBallot(q, ballot);
         } else {

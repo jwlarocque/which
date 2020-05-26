@@ -24,6 +24,10 @@
         }
         return vs
     }
+
+    export function orderOptsByVote(opts, votes) {
+        opts.sort((a, b) => votes[b.option_id] - votes[a.option_id]);
+    }
 </script>
 
 <style>
@@ -36,7 +40,7 @@
     }
 </style>
 
-{#if q.name}
+{#if q.sorted}
     <!-- TODO: better explainer -->
     <p>Rank the options from most preferred to least preferred.</p>
     <DragDropList bind:data={q.options}/>
