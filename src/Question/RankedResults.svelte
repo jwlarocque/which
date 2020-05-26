@@ -4,6 +4,7 @@
 
     let maxVotes = 0;
     let winner = "";
+    let winnerText = "";
 
     $: finalRound = results.reduce(function(a, b) {
         return a.round_num > b.round_num ? a : b;
@@ -11,7 +12,8 @@
     $: winner = results.filter(result => result.round_num == finalRound).reduce(function(a, b) {
         return a.votes > b.votes ? a : b;
     }, {"votes": -1});
-    $: winnerText = q.options.filter(option => option.option_id == winner.option_id)[0].text || "loading..."
+    // TODO: this is not okay
+    $: try {winnerText = q.options.filter(option => option.option_id == winner.option_id)[0].text} catch {winnerText = "loading..."};
 </script>
 
 <p>Runoff Winner: {winnerText}</p>

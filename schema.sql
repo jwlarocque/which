@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.2 (Ubuntu 12.2-4)
--- Dumped by pg_dump version 12.2 (Ubuntu 12.2-4)
+-- Dumped from database version 12.3 (Ubuntu 12.3-1.pgdg20.04+1)
+-- Dumped by pg_dump version 12.3 (Ubuntu 12.3-1.pgdg20.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -89,6 +89,20 @@ CREATE TABLE public.questions (
 ALTER TABLE public.questions OWNER TO jwlarocque;
 
 --
+-- Name: results; Type: TABLE; Schema: public; Owner: jwlarocque
+--
+
+CREATE TABLE public.results (
+    question_id uuid NOT NULL,
+    round_num integer NOT NULL,
+    option_id integer NOT NULL,
+    num_votes integer NOT NULL
+);
+
+
+ALTER TABLE public.results OWNER TO jwlarocque;
+
+--
 -- Name: sessions; Type: TABLE; Schema: public; Owner: jwlarocque
 --
 
@@ -160,6 +174,14 @@ ALTER TABLE ONLY public.questions
 
 
 --
+-- Name: results results_pkey; Type: CONSTRAINT; Schema: public; Owner: jwlarocque
+--
+
+ALTER TABLE ONLY public.results
+    ADD CONSTRAINT results_pkey PRIMARY KEY (question_id, round_num, option_id);
+
+
+--
 -- Name: sessions session_pkey; Type: CONSTRAINT; Schema: public; Owner: jwlarocque
 --
 
@@ -213,6 +235,14 @@ ALTER TABLE ONLY public.options
 
 ALTER TABLE ONLY public.questions
     ADD CONSTRAINT questions_user_id FOREIGN KEY (user_id) REFERENCES public.users(user_id);
+
+
+--
+-- Name: results results_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: jwlarocque
+--
+
+ALTER TABLE ONLY public.results
+    ADD CONSTRAINT results_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(question_id);
 
 
 --
