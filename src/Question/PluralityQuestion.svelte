@@ -4,9 +4,7 @@
     export let votes;
 
     let selectedOption = -1;
-    //$: if (selectedOption >= 0) {votes = votes.fill(0); votes[selectedOption] = 1;}
-    $: console.log(votes); // TODO: remove debug
-    $: selectedOption = votes.indexOf(1);
+    $: if (selectedOption == -1) {selectedOption = votes.indexOf(1);} else if (selectedOption >= 0) {votes = votes.fill(0); votes[selectedOption] = 1;}
 </script>
 
 <script context="module">
