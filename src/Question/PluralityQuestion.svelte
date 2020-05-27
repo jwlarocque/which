@@ -3,9 +3,10 @@
     export let q;
     export let votes;
 
-    let selectedOption = 0;
-    $: if (selectedOption || true) {votes = votes.fill(0); votes[selectedOption] = 1;}
-    $: console.log(votes)
+    let selectedOption = -1;
+    //$: if (selectedOption >= 0) {votes = votes.fill(0); votes[selectedOption] = 1;}
+    $: console.log(votes); // TODO: remove debug
+    $: selectedOption = votes.indexOf(1);
 </script>
 
 <script context="module">
@@ -25,12 +26,13 @@
         align-items: center;
     }
 
-    input[type="checkbox"] {
+    input[type="radio"] {
         position: absolute;
         opacity: 0;
     }
 
-    input[type="checkbox"] + span {
+    input[type="radio"] + span {
+        box-sizing: border-box;
         border: 1px solid #eef2f3;
         border-radius: 3.2em;
 
@@ -49,20 +51,8 @@
         transition: 0.1s ease-in-out;
     }
 
-    input[type="checkbox"]:checked + span {
-        background-color: #eef2f3;
-    }
-
-    input[type="checkbox"] + span > img {
-        height: 1.4em;
-        margin: auto;
-        width: auto;
-        opacity: 0.0;
-        transition: 0.1s ease-in-out;
-    }
-
-    input[type="checkbox"]:checked + span > img {
-        opacity: 1.0;
+    input[type="radio"]:checked + span {
+        border-width: 8px;
     }
 </style>
 
@@ -72,7 +62,7 @@
     {#each q.options as option}
         <label class="clickable">
             <input type="radio" bind:group={selectedOption} value={option.option_id}>
-            <span><img src="images/done.svg" alt="radio button"/></span>
+            <span></span>
             {option.text}
         </label>
     {/each}

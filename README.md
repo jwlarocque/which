@@ -39,6 +39,7 @@ Or just run (`sudo`) `./start.sh`
 
 In Progress
 
+* Consider redirecting to question upon creation
 * Sankey diagrams for ranked choice/runoff results (currently just shows winner)
 * Link copy dropdown
 
